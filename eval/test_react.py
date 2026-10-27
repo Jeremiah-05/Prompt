@@ -461,32 +461,38 @@ class TestMultiTurnConversation:
         if not os.getenv("GROQ_API_KEY") or os.getenv("GROQ_API_KEY") == "your_groq_api_key_here":
             pytest.skip("GROQ_API_KEY not configured for live test")
 
-        # Turn 1: User asks without name -> returns verification challenge
-        res1 = run_react_loop(
-            user_message="Where is my order ORD1002?",
-            chat_history=[],
-            version="V6 — RAG + ReAct",
-            provider="groq"
-        )
-        ans1_low = res1["answer"].lower()
-        assert "name" in ans1_low or "verify" in ans1_low or "verification" in ans1_low
+        try:
+            # Turn 1: User asks without name -> returns verification challenge
+            res1 = run_react_loop(
+                user_message="Where is my order ORD1002?",
+                chat_history=[],
+                version="V6 — RAG + ReAct",
+                provider="groq"
+            )
+            ans1_low = res1["answer"].lower()
+            assert "name" in ans1_low or "verify" in ans1_low or "verification" in ans1_low
 
-        # Turn 2: User responds with only name -> ReAct loop uses history and accesses ORD1002
-        res2 = run_react_loop(
-            user_message="Bob Stevens",
-            chat_history=[
-                {"role": "user", "content": "Where is my order ORD1002?"},
-                {"role": "assistant", "content": res1["answer"]}
-            ],
-            version="V6 — RAG + ReAct",
-            provider="groq"
-        )
-        actions = [s.get("action") for s in res2.get("trace", [])]
-        assert "get_order_status" in actions, "Must call get_order_status on turn 2"
-        status_step = next(s for s in res2["trace"] if s.get("action") == "get_order_status")
-        assert status_step["action_input"]["order_id"] == "ORD1002"
-        assert "Bob Stevens" in status_step["action_input"]["customer_name"]
-        assert "TRK1002US" in res2["answer"]
+            # Turn 2: User responds with only name -> ReAct loop uses history and accesses ORD1002
+            res2 = run_react_loop(
+                user_message="Bob Stevens",
+                chat_history=[
+                    {"role": "user", "content": "Where is my order ORD1002?"},
+                    {"role": "assistant", "content": res1["answer"]}
+                ],
+                version="V6 — RAG + ReAct",
+                provider="groq"
+            )
+            actions = [s.get("action") for s in res2.get("trace", [])]
+            assert "get_order_status" in actions, "Must call get_order_status on turn 2"
+            status_step = next(s for s in res2["trace"] if s.get("action") == "get_order_status")
+            assert status_step["action_input"]["order_id"] == "ORD1002"
+            assert "Bob Stevens" in status_step["action_input"]["customer_name"]
+            assert "TRK1002US" in res2["answer"]
+        except Exception as exc:
+            from llm_client import LLMUnavailableError
+            if isinstance(exc, LLMUnavailableError) or "quota" in str(exc).lower():
+                pytest.skip(f"Live LLM provider quota exhausted: {exc}")
+            raise
 
 
 class TestLiveDatabaseIsolation:

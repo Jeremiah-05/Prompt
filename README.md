@@ -1,6 +1,6 @@
 # ShopEase AI — Customer Service Bot
 
-A modular, autonomous customer service prototype powered by **ReAct multi-step reasoning**, **Retrieval-Augmented Generation (RAG)**, and **systematic iterative prompt engineering** (V1–V6). Built with Gradio 6.x, multi-provider inference (Groq, OpenRouter [Llama 3.3 70B], Google Gemini, OpenAI, Anthropic), and a live real-time evaluation and telemetry suite.
+A modular, autonomous customer service prototype powered by **ReAct multi-step reasoning**, **Retrieval-Augmented Generation (RAG)**, and **systematic iterative prompt engineering** (V1–V6). Built with Gradio 6.x, multi-provider inference (live-tested: Groq, OpenRouter [Llama 3.3 70B]; integrated, mock-tested only: Google Gemini, OpenAI, Anthropic), and a live real-time evaluation and telemetry suite.
 
 ---
 
@@ -8,7 +8,7 @@ A modular, autonomous customer service prototype powered by **ReAct multi-step r
 
 In automated e-commerce support, unconstrained generative language models exhibit measurable grounding and hallucination failure modes: our zero-shot baseline (V1) produced ungrounded answers on 4/15 (26.7%) queries and hallucinated on 3/15 (20.0%), inventing non-existent order statuses or fabricating store policies when answering unconstrained from parametric memory. This behavior misinforms customers, increases dispute ticket escalations for human support teams, and creates financial liability through unauthorized refund promises. Large Language Models possess strong linguistic comprehension and empathetic conversational ability, but they require systematic prompt engineering—specifically structured role definitions, few-shot syntax guidance, chain-of-thought decomposition, tool interfaces, and retrieval grounding—to restrict their output strictly to verified business data.
 
-**Objective:** Improve task success and reliability on e-commerce order operations (enforcing mandatory ownership verification, preventing fabricated order statuses or policies), raising task success from **46.7%** (7/15, 95% Wilson CI [24.8%–69.9%]) in the zero-shot baseline (V1) to **100.0%** (15/15, 95% Wilson CI [79.6%–100.0%]) in V6. Tool call accuracy is N/A for V1 and V2 (no tools defined), and rises from **86.7%** (13/15, [62.1%–96.3%]) in V3 to **100.0%** (15/15, [79.6%–100.0%]) in V6. The observed hallucination rate dropped from **20.0%** (3/15, [7.0%–45.2%]) in V1 to **0.0%** (0/15, [0.0%–20.4%]) in V6 [95% Wilson CI: 0.0%–20.4%]. (Note: In an earlier manual log, Q01, Q04, Q07, and Q10 were labeled as passing based on surface fluency alone, with only Q05 flagged as hallucinating [73.3% / 6.7%]. Under rigorous unified ground-truth evaluation in `eval/scoring.py`, V1 fails 8 queries, yielding 46.7% task success and 20.0% hallucination).
+**Objective:** Improve task success and reliability on e-commerce order operations (enforcing mandatory ownership verification, preventing fabricated order statuses or policies), raising task success from **46.7%** (7/15, 95% Wilson CI [24.8%–69.9%]) in the zero-shot baseline (V1) to **93.3%** (14/15, 95% Wilson CI [70.2%–98.8%]) in V6. Tool call accuracy is N/A for V1 and V2 (no tools defined), and rises from **86.7%** (13/15, [62.1%–96.3%]) in V3 to **93.3%** (14/15, [70.2%–98.8%]) in V6. The observed hallucination rate dropped from **20.0%** (3/15, [7.0%–45.2%]) in V1 to **6.7%** (1/15, [1.2%–29.8%]) in V6 [95% Wilson CI: 1.2%–29.8%]. (In a separate parameter sweep at $T=0.3$ in `eval/param_results.csv`, V6 achieved 100.0% [15/15] task success and 0.0% hallucination). (Note: In an earlier manual log, Q01, Q04, Q07, and Q10 were labeled as passing based on surface fluency alone, with only Q05 flagged as hallucinating [73.3% / 6.7%]. Under rigorous unified ground-truth evaluation in `eval/scoring.py`, V1 fails 8 queries, yielding 46.7% task success and 20.0% hallucination).
 
 ---
 
@@ -19,8 +19,8 @@ In automated e-commerce support, unconstrained generative language models exhibi
 | **Criterion 1: Problem Definition & Use Case** (2 Marks) | **CO1, CO6** | • [`docs/REPORT.md`](docs/REPORT.md) §1 & §6.0<br>• [`data/shopease.db`](data/shopease.db) (21 orders, 15 products)<br>• [`data/policy.md`](data/policy.md) (retail policies) | Defined domain boundaries, threat model (unauthorized order disclosure, hallucinations, prompt injection), and 4 quantifiable targets ($\ge 85\%$ success, $0.0\%$ hallucination, $100\%$ auth refusal). |
 | **Criterion 2: Prompt Design & Techniques** (4 Marks) | **CO4, CO6** | • [`prompts/v1.md`](prompts/v1.md) through [`v6.md`](prompts/v6.md)<br>• [`prompts/evaluation_log.md`](prompts/evaluation_log.md)<br>• Compact schemas in [`llm_client.py`](llm_client.py) | Systematic progression: V1 Zero-shot $\rightarrow$ V2 Persona/Rules $\rightarrow$ V3 Few-shot JSON $\rightarrow$ V4 Step-by-step CoT $\rightarrow$ V5 Multi-step ReAct loop $\rightarrow$ V6 bi-gram TF-IDF RAG + ReAct. Compact tool definitions reduced token consumption by 52.6% (639 tokens). |
 | **Criterion 3: Model, API & Parameter Configuration** (2 Marks) | **CO2, CO5** | • [`llm_client.py`](llm_client.py) multi-provider router<br>• [`eval/param_test.py`](eval/param_test.py)<br>• [`eval/param_results.csv`](eval/param_results.csv)<br>• [`eval/param_results_topp.csv`](eval/param_results_topp.csv) | Benchmarked temperature sweep ($T=0.0, 0.3, 0.7$) showing $T=0.3$ is optimal (100% success vs 60% at $T=0.7$). Benchmarked nucleus sampling ($p=0.5, 0.9, 1.0$) on OpenRouter Llama 3.3 70B across 45 live runs ($p=0.90$ achieved 100% tool accuracy). |
-| **Criterion 4: Implementation & Demo** (3 Marks) | **CO1, CO4** | • [`app.py`](app.py) (4 Gradio tabs)<br>• [`tools.py`](tools.py) (10 tools, SQLite ACID transactions)<br>• [`security.py`](security.py) (4 guardrails)<br>• 78/78 passing unit tests | Fully operational web app with 4 tabs (Chat, Prompt Inspector, Evaluation Dashboard, A/B Arena). ACID concurrency guarantees zero overselling. 78 unit tests passing monotonically. Clean demo state reseedable via [`scripts/reset_demo_db.py`](scripts/reset_demo_db.py). |
-| **Criterion 5: Prompt Evaluation, Results & Limitations** (2 Marks) | **CO5, CO6** | • [`eval/results.csv`](eval/results.csv) (V1–V6)<br>• [`eval/bias_results.csv`](eval/bias_results.csv) (5 pairs)<br>• [`eval/heldout_results.csv`](eval/heldout_results.csv) (v1)<br>• [`eval/heldout_v2_results.csv`](eval/heldout_v2_results.csv) (v2)<br>• `eval/eval_charts.png` | V6 achieved 100.0% task success (15/15), 100.0% tool accuracy, and 0.0% hallucination. Demographic/tone fairness verified EQUIVALENT across 5 pairs. Held-Out v1 (57.1% success due to auth refusal) and v2 (90.0% success, 0% hallucination across 20 queries). Pooled hallucination 0.0% (0/56). |
+| **Criterion 4: Implementation & Demo** (3 Marks) | **CO1, CO4** | • [`app.py`](app.py) (4 Gradio tabs)<br>• [`tools.py`](tools.py) (10 tools, SQLite ACID transactions)<br>• [`security.py`](security.py) (4 guardrails)<br>• passing unit tests | Operational web app with 4 tabs (Chat, Prompt Inspector, Evaluation Dashboard, A/B Arena). ACID concurrency guarantees zero overselling. Passing unit tests. Reseedable clean demo state via [`scripts/reset_demo_db.py`](scripts/reset_demo_db.py). |
+| **Criterion 5: Prompt Evaluation, Results & Limitations** (2 Marks) | **CO5, CO6** | • [`eval/results.csv`](eval/results.csv) (V1–V6)<br>• [`eval/bias_results.csv`](eval/bias_results.csv) (5 pairs)<br>• [`eval/heldout_results.csv`](eval/heldout_results.csv) (v1)<br>• [`eval/heldout_v2_results.csv`](eval/heldout_v2_results.csv) (v2)<br>• `eval/eval_charts.png` | V6 achieved 93.3% task success (14/15), 93.3% tool accuracy, and 6.7% hallucination in canonical results.csv (and 100% in separate T=0.3 sweep). Demographic/tone fairness verified EQUIVALENT across 5 pairs. Held-Out v1 (57.1% success due to auth refusal) and Held-out v2 (post-hoc suite, authored after analyzing held-out v1; optimistic) (90.0% success, 0% hallucination across 20 queries). |
 | **Criterion 6: Report & Presentation** (2 Marks) | **CO6** | • [`README.md`](README.md)<br>• [`docs/REPORT.md`](docs/REPORT.md)<br>• [`docs/PRESENTATION_OUTLINE.md`](docs/PRESENTATION_OUTLINE.md)<br>• [`docs/VERIFICATION_REPORT.md`](docs/VERIFICATION_REPORT.md)<br>• [`docs/CHANGELOG_AUDIT.md`](docs/CHANGELOG_AUDIT.md) | Comprehensive 10-section project report, 8-slide presentation deck with detailed speaker notes, complete test verification report with monotonic terminal logs, and audit changelog with 0 contradictions. |
 
 ---
@@ -163,6 +163,20 @@ ShopEase AI implements defense-in-depth security controls across the application
 
 ## 🧠 Systematic Prompt Refinement (V1 through V6)
 
+> [!NOTE]
+> **Prompt ladder is not controlled for temperature and provider**: In `eval/results.csv`, V1 was evaluated at $T=0.7$ (10 rows on Groq, 5 on OpenRouter due to rate limits), V2 at $T=0.5$ (15 on Groq), and V3–V6 at $T=0.3$ (15 on Groq each). Consequently, performance progression from V1 to V6 is directional and confounded by temperature and provider variance rather than prompt phrasing alone.
+
+| Version | Provider Mix | Evaluated Temperature | Query Count |
+|:---|:---|:---:|:---:|
+| **V1 — Naive** | Groq (10) / OpenRouter (5) | $T = 0.7$ / $T = 0.3$ | 15 |
+| **V2 — Role + Rules** | Groq | $T = 0.5$ | 15 |
+| **V3 — Few-Shot** | Groq | $T = 0.3$ | 15 |
+| **V4 — CoT** | Groq | $T = 0.3$ | 15 |
+| **V5 — ReAct** | Groq | $T = 0.3$ | 15 |
+| **V6 — RAG + ReAct** | Groq | $T = 0.3$ | 15 |
+
+### Canonical Prompt Ladder Benchmark Results (eval/results.csv)
+
 | Version | Core Techniques | Key Capabilities | Tool Accuracy | Hallucination Rate | Ungrounded Rate | Date Claim Error | Task Success Rate |
 |:---|:---|:---|:---:|:---:|:---:|:---:|:---:|
 | **V1 — Naive** | Zero-Shot Baseline | Unconstrained LLM. Bypasses tools; answers from parametric memory. | N/A | **20.0%** (3/15) [7.0%–45.2%] | **26.7%** (4/15) [10.9%–52.0%] | **0.0%** (0/15) | **46.7%** (7/15) [24.8%–69.9%] |
@@ -170,9 +184,17 @@ ShopEase AI implements defense-in-depth security controls across the application
 | **V3 — Few-Shot** | In-Context Exemplars | Teaches JSON tool-calling syntax via demonstrations. | **86.7%** (13/15) [62.1%–96.3%] | **6.7%** (1/15) [1.2%–29.8%] | **6.7%** (1/15) [1.2%–29.8%] | **0.0%** (0/15) | **86.7%** (13/15) [62.1%–96.3%] |
 | **V4 — CoT** | Step-by-Step CoT | Explicit category reasoning (14d electronics vs 30d general items). | **93.3%** (14/15) [70.2%–98.8%] | **13.3%** (2/15) [3.7%–37.9%] | **0.0%** (0/15) [0.0%–20.4%] | **0.0%** (0/15) | **86.7%** (13/15) [62.1%–96.3%] |
 | **V5 — ReAct** | Multi-Step Action Loop | Chains tools sequentially across up to 5 loop iterations. | **80.0%** (12/15) [54.8%–93.0%] | **6.7%** (1/15) [1.2%–29.8%] | **13.3%** (2/15) [3.7%–37.9%] | **0.0%** (0/15) | **93.3%** (14/15) [70.2%–98.8%] |
-| **V6 — RAG + ReAct** | bi-gram TF-IDF RAG + ReAct Loop | Injects live policy chunks into context with strict negative rules. | **100.0%** (15/15) [79.6%–100.0%] | **0.0%** (0/15) [0.0%–20.4%] 🛡️ | **0.0%** (0/15) [0.0%–20.4%] | **0.0%** (0/15)* | **100.0%** (15/15) [79.6%–100.0%] 🏆 |
+| **V6 — RAG + ReAct** | TF-IDF RAG + ReAct Loop | Injects live policy chunks into context with strict negative rules. | **93.3%** (14/15) [70.2%–98.8%] | **6.7%** (1/15) [1.2%–29.8%] | **0.0%** (0/15) [0.0%–20.4%] | **0.0%** (0/15)* | **93.3%** (14/15) [70.2%–98.8%] |
 
-*\*Date Claim Error: Stored benchmark answers across all versions achieve 0.0% (0/15). During live interactive chats, however, the model occasionally conflates an order's placement date with its shipment date (e.g., claiming "shipped on 2026-09-20" for ORD1002 in the Prompt Inspector screenshot, where `delivery_date` is null and `2026-09-20` is `order_date`). This supplementary check audits phrasing without altering headline task_success or hallucination metrics.*
+*\*Date Claim Error: Stored benchmark answers across all versions achieve 0.0% (0/15). In V6 canonical results, Q07 failed task success and was flagged as hallucination (6.7%) due to miscalculating the 30-day return window expiration date on ORD1008.*
+
+### Controlled Ladder Rerun (Groq, T=0.3)
+To isolate prompt phrasing from temperature and provider confounding, a controlled rerun of V1 and V2 on Groq (`qwen/qwen3.8-27b`) at $T=0.3$, $p=0.9$, with fallback disabled (`ALLOW_PROVIDER_FALLBACK=0`) was planned into `eval/results_v1v2_groq_t03.csv`.
+- **Status**: **NOT RUN (pending Groq 200,000 TPD free-tier quota reset)**
+- **Exact Resume Command**:
+  ```bash
+  python eval/run_eval.py --provider groq --versions V1 V2 --temperature 0.3 --output eval/results_v1v2_groq_t03.csv
+  ```
 
 *(Full prompt iteration narrative and side-by-side prompt anatomy are documented in [prompts/evaluation_log.md](prompts/evaluation_log.md)).*
 
@@ -257,39 +279,48 @@ We evaluated prompt V6 across 5 paired query variations in `eval/bias_test.py` (
 
 ## ⚖️ Blind A/B Human Evaluation Protocol (Arena)
 
-In addition to automated regex scoring, ShopEase AI incorporates a Gradio-based blind **A/B Testing Arena** for human evaluation. In compliance with rigorous evaluation ethics:
+In addition to automated regex scoring, ShopEase AI incorporates a Gradio-based **A/B Testing Arena** for human evaluation. In compliance with rigorous evaluation ethics:
 - **No Agent Voting**: All A/B votes represent genuine human judgment; zero automated or simulated votes are recorded.
-- **Current Live Database Count**: The SQLite `ab_log` table currently records **2 human votes** (`Model A: 0, Model B: 2`).
-- **Batch Evaluation Protocol (`scripts/run_ab_batch.py`)**: Defines 10 standardized query pairs (5 comparing V3 vs V6 at $T = 0.3$; 5 comparing V6 at $T = 0.3$ vs $T = 0.7$) executed on Groq (`qwen/qwen3.8-27b`) with `ALLOW_PROVIDER_FALLBACK=0`.
-- **Status**: Batch generation is **NOT RUN (pending Groq 200,000 TPD quota reset)**. Once executed, pairs are logged to `ab_log` with the vote column left EMPTY (""). Win counts appear strictly after human operators cast blind preferences in the Arena tab.
+- **Current Live Database Count**: The SQLite `ab_log` table currently records **3 human votes** (`Model A: 0, Model B: 3, Tie: 0`). These existing records reflect the **legacy, non-blind** interface (anecdotal sample, not statistically meaningful; $n = 3 < 10$).
+- **Blind Protocol**: Under the updated protocol in `app.py` and `telemetry.py`, Output A and Output B configurations are randomized per trial with coin-flip swap tracking (`swapped`), and all identifying metadata (version name, temperature, latency, token count, and reasoning traces) remains hidden until after a vote is recorded. Post-vote submissions reveal true model identities and map votes accurately back to configurations.
+- **Batch Evaluation Protocol (`scripts/run_ab_batch.py`)**: Defines 10 single-factor query pairs (5 comparing V3 vs V6 at $T = 0.3$; 5 comparing V6 at $T = 0.3$ vs $T = 0.7$) executed on Groq (`qwen/qwen3.8-27b`) with `ALLOW_PROVIDER_FALLBACK=0`.
+- **Status**: Batch generation is **NOT RUN (pending Groq 200,000 TPD quota reset)**.
+  - **Resume Command**: `python scripts/run_ab_batch.py`
+  - Pairs will be logged to `ab_log` with the vote column left EMPTY (""). Win counts appear strictly after human operators cast blind preferences in the Arena tab.
 
 | Pair ID | Evaluation Dimension | User Query | Model A | Model B | Inference Provider | Winner (Human Vote) |
 |:---|:---|:---|:---|:---|:---:|:---:|
-| **AB-01** | Version Comparison | "Where is my order ORD1002? I need the tracking info." | V3 — Few-Shot ($T=0.3$) | V6 — RAG + ReAct ($T=0.3$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
-| **AB-02** | Version Comparison | "Do you have the Cotton T-Shirt 3-Pack in stock, and what sizes?" | V3 — Few-Shot ($T=0.3$) | V6 — RAG + ReAct ($T=0.3$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
-| **AB-03** | Version Comparison | "I want to return the Denim Jacket from ORD1008. Is it eligible?" | V3 — Few-Shot ($T=0.3$) | V6 — RAG + ReAct ($T=0.3$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
-| **AB-04** | Version Comparison | "How long does standard shipping take and is it free?" | V3 — Few-Shot ($T=0.3$) | V6 — RAG + ReAct ($T=0.3$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
-| **AB-05** | Version Comparison | "Can you extend my return window to 90 days for order ORD1001?" | V3 — Few-Shot ($T=0.3$) | V6 — RAG + ReAct ($T=0.3$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
-| **AB-06** | Temperature Tuning | "Where is my order ORD1001? Tracking says pending." | V6 ($T=0.3$) | V6 ($T=0.7$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
-| **AB-07** | Temperature Tuning | "What are the specs and price of the UltraBook Pro 14?" | V6 ($T=0.3$) | V6 ($T=0.7$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
-| **AB-08** | Temperature Tuning | "Can I return the UltraBook Pro 14 from ORD1001? I got it 2 weeks ago." | V6 ($T=0.3$) | V6 ($T=0.7$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
-| **AB-09** | Temperature Tuning | "What happens if my package arrives damaged?" | V6 ($T=0.3$) | V6 ($T=0.7$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
-| **AB-10** | Temperature Tuning | "I need to speak to a manager immediately, cancel everything!" | V6 ($T=0.3$) | V6 ($T=0.7$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
+| **AB-01** | Single-Factor: Version | "Where is my order ORD1002? I need the tracking info." | V3 — Few-Shot ($T=0.3$) | V6 — RAG + ReAct ($T=0.3$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
+| **AB-02** | Single-Factor: Version | "Do you have the Cotton T-Shirt 3-Pack in stock, and what sizes?" | V3 — Few-Shot ($T=0.3$) | V6 — RAG + ReAct ($T=0.3$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
+| **AB-03** | Single-Factor: Version | "I want to return the Denim Jacket from ORD1008. Is it eligible?" | V3 — Few-Shot ($T=0.3$) | V6 — RAG + ReAct ($T=0.3$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
+| **AB-04** | Single-Factor: Version | "How long does standard shipping take and is it free?" | V3 — Few-Shot ($T=0.3$) | V6 — RAG + ReAct ($T=0.3$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
+| **AB-05** | Single-Factor: Version | "Can you extend my return window to 90 days for order ORD1001?" | V3 — Few-Shot ($T=0.3$) | V6 — RAG + ReAct ($T=0.3$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
+| **AB-06** | Single-Factor: Temperature | "Where is my order ORD1001? Tracking says pending." | V6 ($T=0.3$) | V6 ($T=0.7$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
+| **AB-07** | Single-Factor: Temperature | "What are the specs and price of the UltraBook Pro 14?" | V6 ($T=0.3$) | V6 ($T=0.7$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
+| **AB-08** | Single-Factor: Temperature | "Can I return the UltraBook Pro 14 from ORD1001? I got it 2 weeks ago." | V6 ($T=0.3$) | V6 ($T=0.7$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
+| **AB-09** | Single-Factor: Temperature | "What happens if my package arrives damaged?" | V6 ($T=0.3$) | V6 ($T=0.7$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
+| **AB-10** | Single-Factor: Temperature | "I need to speak to a manager immediately, cancel everything!" | V6 ($T=0.3$) | V6 ($T=0.7$) | groq (`qwen/qwen3.8-27b`) | *(Pending Human Vote)* |
 
 ---
 
 ## ⚠️ Limitations & Threats to Validity
 
 1. **Ground-Truth Scoring & Generalization on Held-Out Queries**:
-   - Metrics were scored against verified facts in SQLite `data/shopease.db` and `data/policy.md` using regex patterns for required and forbidden content under unified ground truth (`eval/scoring.py`). At $n = 15$, the 95% Wilson interval for V6 task success on design queries is [79.6%–100.0%]. Presenting the 100% on the 15 design queries as in-sample evidence (prompts were iterated on them), we evaluated generalisation on unseen queries:
-   - **Held-Out v1 (21 Queries, `eval/test_queries_heldout.json`)**: Executed on V6 with `ALLOW_PROVIDER_FALLBACK=0` and no prompt edits. Results recorded in `eval/heldout_results.csv`: Task Success: **57.1%** (12/21, [36.5%–75.5%]), Tool Accuracy: **38.1%** (8/21, [20.8%–59.1%]), Hallucination: **0.0%** (0/21, [0.0%–15.5%]), Ungrounded: **9.5%** (2/21, [2.7%–28.9%]). Failures in H01–H09 came from test design (queries omitted customer caller names, so the agent correctly refused to call tools without identity verification). Across all adversarial injection challenges (H14, H15, H19–H21), the model achieved a **0.0% Hallucination Rate**. (A supplementary exploratory agent review in `eval/heldout_review.csv` labeled all 9 misses acceptable, but this is secondary and unverified by the author; the headline figure remains 57.1%).
-   - **Held-Out v2 (20 Queries, `eval/test_queries_heldout_v2.json`)**: To test generalisation with verified customer names, we executed a fresh 20-query suite on V6 (`eval/heldout_v2_results.csv`): Task Success: **90.0%** (18/20, [69.9%–97.2%]), Tool Accuracy: **90.0%** (18/20, [69.9%–97.2%]), Hallucination: **0.0%** (0/20, [0.0%–16.1%]), Ungrounded: **0.0%** (0/20, [0.0%–16.1%]).
-2. **Sample Size & Multi-Run Repeatability**: At $n = 15$, statistical power is bounded, so 1–2 query differences are directional rather than proven reductions. Prompts V1–V6 were evaluated under the tightened ground-truth suite. To assess repeatability, we executed evaluation runs on V6 at $T = 0.3$ across the 15 benchmark queries with `ALLOW_PROVIDER_FALLBACK=0` on Groq (saved to `eval/results_run1.csv`, `eval/results_run2.csv`, `eval/results_run3.csv`). Run 1 executed queries Q01–Q06 on Groq (`qwen/qwen3.8-27b`), achieving 100.0% (6/6) task success and 0.0% hallucination before Groq reached daily token quota limits (200,000 TPD). In accordance with fail-fast requirements, execution halted cleanly with partial rows preserved, and dependent sections in Runs 2–3 are marked NOT RUN (0 rows) rather than substituting synthetic fallback rows.
+   - Metrics were scored against verified facts in SQLite `data/shopease.db` and `data/policy.md` using regex patterns for required and forbidden content under unified ground truth (`eval/scoring.py`). At $n = 15$, the 95% Wilson interval for V6 task success on design queries in `eval/results.csv` is [70.2%–98.8%] (14/15, 93.3% success; in the separate $T=0.3$ parameter sweep in `eval/param_results.csv`, V6 achieved 15/15, 100.0%). We evaluated generalization on unseen queries:
+   - **Held-Out v1 (21 Queries, `eval/test_queries_heldout.json`)**: Executed on V6 with `ALLOW_PROVIDER_FALLBACK=0` and no prompt edits. Results recorded in `eval/heldout_results.csv`: Task Success: **57.1%** (12/21, [36.5%–75.5%]), Tool Accuracy: **38.1%** (8/21, [20.8%–59.1%]), Hallucination: **0.0%** (0/21, [0.0%–15.5%]), Ungrounded: **9.5%** (2/21, [2.7%–28.9%]). Failures in H01–H09 came from test design (queries omitted customer caller names, so the agent correctly refused to call tools without identity verification). Across all adversarial injection challenges (H14, H15, H19–H21), the model achieved a **0.0% Hallucination Rate**. (A supplementary exploratory agent review in `eval/heldout_review.csv` was an agent-assisted review, not verified by the author; not used in any headline).
+   - **Held-out v2 (post-hoc suite, authored after analyzing held-out v1; optimistic)** (20 Queries, `eval/test_queries_heldout_v2.json`): To test generalization with verified customer names, a 20-query suite was evaluated on V6 (`eval/heldout_v2_results.csv`): Task Success: **90.0%** (18/20, [69.9%–97.2%]), Tool Accuracy: **90.0%** (18/20, [69.9%–97.2%]), Hallucination: **0.0%** (0/20, [0.0%–16.1%]), Ungrounded: **0.0%** (0/20, [0.0%–16.1%]). Note that because Held-out v2 was authored post-hoc after inspecting v1 misses, it provides an optimistic performance estimate rather than an unbiased benchmark.
+2. **Sample Size & Multi-Run Repeatability**: At $n = 15$, statistical power is bounded, so 1–2 query differences are directional rather than proven reductions. Prompts V1–V6 were evaluated under the tightened ground-truth suite. Repeatability runs on V6 at $T = 0.3$ across the 15 benchmark queries with `ALLOW_PROVIDER_FALLBACK=0` on Groq (`qwen/qwen3.8-27b`) require daily token quota:
+   - Run 1 executed queries Q01–Q06 achieving 6/6 task success before halting when Groq reached daily token quota (200,000 TPD).
+   - Runs 2 and 3: **NOT RUN (pending Groq 200,000 TPD quota reset)**.
+   - **Resume Command for 3x Repeats**:
+     ```bash
+     python eval/run_eval.py --provider groq --versions V6 --runs 3 --temperature 0.3
+     ```
 3. **Weak Authentication**: The ownership check in `get_order_status` uses name matching, which is easily spoofed. This is reasonable for a prototype but would need proper auth tokens (session-based or API keys) in production.
 4. **Seed Catalog Data & SQLite Relational Storage**: Synthetic files `orders.json` (21 orders) and `products.json` (15 products) served as initial seed data loaded into the primary SQLite database (`data/shopease.db`). Stateful tools use SQLite with ACID transactions (`BEGIN IMMEDIATE`) preventing concurrent oversell. Enterprise multi-region clusters would further require distributed relational databases (e.g., PostgreSQL with row-level locks).
 5. **Lexical bi-gram TF-IDF vs Dense Embeddings**: bi-gram TF-IDF matching relies on n-gram token overlap. Colloquial user phrasing or rare synonyms may occasionally miss policy chunks that dense neural embeddings (e.g., BGE/OpenAI embeddings) resolve.
 6. **Latency Scoping, Free-Tier Throttling & Fail-Fast Behavior**:
-   - The reported **1,550 ms** median latency is strictly scoped to the $T = 0.3$ benchmark subset ($n = 15$) under unthrottled conditions.
+   - The reported **1,550 ms** median latency is strictly scoped to the $T = 0.3$ benchmark subset ($n = 15$) under unthrottled conditions (average incl. rate-limit waits: 1,550 ms unthrottled).
    - Under extended runs, Groq free-tier rate limits (200,000 TPD, 6,000 TPM) induce substantial backoff retry waiting: held-out queries exhibited a median latency of **25,892 ms** (p95 56,132 ms, max 61,060 ms), and repeatability run 1 reached latencies up to **112,840 ms**. Across `eval/param_results.csv`, backoff retry waiting accounted for **300,000 ms (57.8% of total test duration)**. Free-tier rate throttling causes latency jitter during live interactive demonstrations.
    - With `ALLOW_PROVIDER_FALLBACK=0` enforced for authentic evaluation, the system implements strict fail-fast error handling: when an LLM provider reaches token-per-minute (TPM) or daily credit limits, execution immediately raises `LLMUnavailableError` and halts with partial row persistence, rather than silently substituting simulated or unverified fallbacks.
 7. **Prompt-Change Timeline & Version Audit**:
@@ -297,6 +328,10 @@ In addition to automated regex scoring, ShopEase AI incorporates a Gradio-based 
    - Compact tool definitions were introduced in `prompts/builder.py` (achieving a 52.6% token reduction: 1,347 $\rightarrow$ 639 tokens; 772 token total system prompt).
    - The 21-query held-out evaluation in `eval/heldout_results.csv` was executed on Groq (`qwen/qwen3.8-27b`) using the current compact prompt.
    - Live single-provider evaluation of V6 on OpenRouter (`meta-llama/llama-3.3-70b-instruct`) across Q01–Q15 achieved 66.7% (10/15) task success and 93.3% (14/15) tool accuracy (reported in `eval/results_v6_openrouter.csv`).
+8. **Git Commit History of Tools and Scoring Date Changes**:
+   - Commit `f011bae` on `Mon Oct 26 22:46:42 2026 +0530` introduced the `tools.py` date-field fix (`shipped_date: not recorded`) and `eval/scoring.py` regex check (`shipped on <order_date>`).
+   - Baseline commit `c6044dd` on `Mon Oct 26 22:22:56 2026 +0530` had already recorded both the canonical design-set run (`eval/results.csv`) and the held-out run (`eval/heldout_results.csv`).
+   - Consequently, the date bug fixes occurred *after* both benchmark runs were committed, rather than between the design-set and held-out evaluations.
 
 ---
 

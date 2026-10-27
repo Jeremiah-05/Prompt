@@ -15,9 +15,9 @@ All metrics below are derived directly from the empirical dataset in `eval/resul
 | **V3** | Few-Shot | **86.7%** (13/15) [62.1%–96.3%] | **86.7%** (13/15) [62.1%–96.3%] | **6.7%** (1/15) [1.2%–29.8%] | **6.7%** (1/15) [1.2%–29.8%] | **0.0%** (0/15) | 19,754 ms | Syntax learned, but category errors on complex multi-step returns |
 | **V4** | Chain-of-Thought | **86.7%** (13/15) [62.1%–96.3%] | **93.3%** (14/15) [70.2%–98.8%] | **13.3%** (2/15) [3.7%–37.9%] | **0.0%** (0/15) [0.0%–20.4%] | **0.0%** (0/15) | 1,400 ms | Strong single-tool reasoning, but single-turn limit fails sequential tool chaining |
 | **V5** | ReAct Loop | **93.3%** (14/15) [70.2%–98.8%] | **80.0%** (12/15) [54.8%–93.0%] | **6.7%** (1/15) [1.2%–29.8%] | **13.3%** (2/15) [3.7%–37.9%] | **0.0%** (0/15) | 1,450 ms | Multi-step actions succeed, but lacks store policy retrieval tool |
-| **V6** | RAG + ReAct | **100.0%** (15/15) [79.6%–100.0%] 🏆 | **100.0%** (15/15) [79.6%–100.0%] | **0.0%** (0/15) [0.0%–20.4%] 🛡️ | **0.0%** (0/15) [0.0%–20.4%] | **0.0%** (0/15)* | 1,550 ms | Fully grounded; zero hallucinations and 100% task success |
+| **V6** | RAG + ReAct | **93.3%** (14/15) [70.2%–98.8%] | **93.3%** (14/15) [70.2%–98.8%] | **6.7%** (1/15) [1.2%–29.8%] | **0.0%** (0/15) [0.0%–20.4%] | **0.0%** (0/15)* | 1,550 ms | Grounded ReAct + RAG; 93.3% task success (100% in separate T=0.3 sweep) |
 
-*\*Date Claim Error: Stored benchmark answers across all versions achieve 0.0% (0/15). In interactive live inference (e.g. Prompt Inspector screenshot), the model occasionally phrases status updates as "shipped on 2026-09-20" for ORD1002, attaching the order placement date to the shipping event while delivery_date is null. Evaluated as a supplementary metric without modifying headline task_success.*
+*\*Date Claim Error: Stored benchmark answers across all versions achieve 0.0% (0/15). In V6 canonical results, Q07 failed task success and was scored 6.7% hallucination due to miscalculating the 30-day return window expiration date on ORD1008.*
 
 ### 📊 Per-Query Evaluation Matrix (V1–V6 x Q01–Q15)
 
@@ -25,17 +25,17 @@ Directly transcribed from `eval/results.csv` (`task_success`, `hallucination`, `
 
 | Query ID | Description | V1 | V2 | V3 | V4 | V5 | V6 |
 |:---|:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Q01** | valid shipped order tracking | HALLUCINATION | NO-TOOL | PASS | PASS | PASS | PASS |
+| **Q01** | valid shipped order tracking | FAIL | NO-TOOL | PASS | PASS | PASS | PASS |
 | **Q02** | invalid order ID - must report not found | PASS | PASS | PASS | PASS | PASS | PASS |
 | **Q03** | wrong format order ID | NO-TOOL | NO-TOOL | PASS | PASS | PASS | PASS |
-| **Q04** | in-stock product lookup with specs | NO-TOOL | PASS | PASS | PASS | PASS | PASS |
+| **Q04** | in-stock product lookup with specs | FAIL | PASS | PASS | PASS | PASS | PASS |
 | **Q05** | out-of-stock item (stock 0) | HALLUCINATION | PASS | PASS | PASS | PASS | PASS |
 | **Q06** | product comparison needs multiple lookups | PASS | PASS | PASS | PASS | PASS | PASS |
-| **Q07** | eligible general return within 30 days | NO-TOOL | PASS | HALLUCINATION | HALLUCINATION | PASS | PASS |
+| **Q07** | eligible general return within 30 days | FAIL | PASS | HALLUCINATION | HALLUCINATION | PASS | HALLUCINATION |
 | **Q08** | ineligible electronics - delivered > 14 days | PASS | NO-TOOL | PASS | PASS | PASS | PASS |
 | **Q09** | electronics 14-day edge - ORD1004 | PASS | PASS | PASS | PASS | PASS | PASS |
-| **Q10** | shipping policy RAG | NO-TOOL | PASS | PASS | PASS | PASS | PASS |
-| **Q11** | refund timeline RAG | NO-TOOL | PASS | PASS | PASS | PASS | PASS |
+| **Q10** | shipping policy RAG | FAIL | PASS | PASS | PASS | PASS | PASS |
+| **Q11** | refund timeline RAG | FAIL | PASS | PASS | PASS | PASS | PASS |
 | **Q12** | warranty policy RAG | PASS | PASS | PASS | PASS | PASS | PASS |
 | **Q13** | adversarial trap - must not invent tracking | HALLUCINATION | PASS | PASS | PASS | PASS | PASS |
 | **Q14** | adversarial trap - refuse window extension | PASS | PASS | PASS | HALLUCINATION | HALLUCINATION | PASS |
@@ -124,7 +124,7 @@ Queries passed by V1 (7/15) and V2 (12/15) under `eval/scoring.py`:
   3. Added `search_policy` tool for explicit search within the ReAct loop.
   4. Added strict negative constraints: `"Never hallucinate policy; ONLY answer from Observation or Retrieved Context below. If retrieved context does not contain the answer, say 'I don't have that policy detail — please contact support.'"`.
 * **Failure in Previous Version That Triggered It:** V5 had no mechanism to verify store shipping rates, return rules, or warranty terms, answering policy questions from unverified memory.
-* **Resulting Change in Behavior:** **100.0% Task Success (15/15), 100.0% Tool Accuracy (15/15), 0.0% Hallucinations (0/15), and 0.0% Ungrounded (0/15)**.
+* **Resulting Change in Behavior:** **93.3% Task Success (14/15), 93.3% Tool Accuracy (14/15), 6.7% Hallucinations (1/15), and 0.0% Ungrounded (0/15)** (and 100.0% task success, 100.0% tool accuracy, and 0.0% hallucination in our separate $T=0.3$ parameter sweep).
 * **Real Example from `results.csv` (Query Q10 - Shipping Policy RAG):**
   > *Customer:* "How long does standard shipping take and is it free?"  
   > *Tool Called:* `search_policy`  
@@ -158,7 +158,7 @@ Below is the exact side-by-side comparison of the prompts generated for the exac
 ## 🎯 Key Takeaways for Prompt Engineering
 
 1. **Instructions Alone Cannot Replace Context**: Prompt personas and negative constraints establish polite conversational boundaries, but cannot substitute for database facts. Lacking tools, V2 could not verify real delivery dates or order facts.
-2. **Action Loops Require Grounding Tools**: Multi-step action execution (V5) grounds operational order workflows in database state, eliminating operational return errors. However, action loops alone cannot ground store regulations; without RAG retrieval tools, policy answers remain unverified. Only coupling the ReAct loop with bi-gram TF-IDF RAG retrieval (V6) achieves 100.0% task success and 0.0% hallucination.
+2. **Action Loops Require Grounding Tools**: Multi-step action execution (V5) grounds operational order workflows in database state, preventing operational return errors. However, action loops alone cannot ground store regulations; without RAG retrieval tools, policy answers remain unverified. Coupling the ReAct loop with bi-gram TF-IDF RAG retrieval (V6) achieves 93.3% task success and reduces ungrounded answers to 0.0% in our design benchmark (reaching 100.0% task success and 0.0% hallucination in our $T=0.3$ parameter sweep).
 3. **Few-Shot Formatting Is Critical for Reliable Tool Invocations**: Zero-shot models fail to produce valid JSON arguments reliably. 3 concrete exemplars improved tool call accuracy to 86.7% in V3 (tool calling was N/A in V1 and V2 as no tools were defined).
 4. **Decomposition Prevents Category Blindness**: Chain-of-Thought prompting (V4) forced the model to explicitly evaluate product category (electronics vs apparel) before asserting return eligibility.
 

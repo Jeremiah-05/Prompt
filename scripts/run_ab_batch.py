@@ -181,7 +181,9 @@ def run_ab_batch(provider: str = "groq") -> list[dict]:
             trace_a = format_trace(res_a.get("trace", []))
             trace_b = format_trace(res_b.get("trace", []))
 
-            # Log to ab_log with EMPTY vote
+            a_config = f"{v_a} (T={t_a})"
+            b_config = f"{v_b} (T={t_b})"
+            # Log to ab_log with EMPTY vote under blind protocol
             row_id = log_ab_comparison(
                 prompt=prompt,
                 version_a=v_a,
@@ -197,6 +199,10 @@ def run_ab_batch(provider: str = "groq") -> list[dict]:
                 latency_b_ms=lat_b,
                 trace_a=trace_a,
                 trace_b=trace_b,
+                a_config=a_config,
+                b_config=b_config,
+                swapped=0,
+                protocol="blind",
             )
 
             print(f"   Logged to ab_log (id={row_id}) [Vote: EMPTY]")

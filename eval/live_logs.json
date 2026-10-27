@@ -90,5 +90,90 @@
     "tools_str": "None (Direct)",
     "answer_preview": "I don't have access to your specific store's live inventory database, so I cannot display ...",
     "status": "\u2705 Success"
+  },
+  {
+    "id": "LIVE-007",
+    "time": "10:28:55",
+    "query": "Show me all electronics products available in your store.",
+    "full_query": "Show me all electronics products available in your store.",
+    "version": "V1",
+    "full_version": "V1 \u2014 Naive",
+    "provider": "GEMINI",
+    "latency_ms": 817,
+    "iterations": 1,
+    "tools_called": [],
+    "tools_str": "None (Direct)",
+    "answer_preview": "I do not have access to real-time inventory or a live database of our store's current stoc...",
+    "status": "\u2705 Success"
+  },
+  {
+    "id": "LIVE-008",
+    "time": "10:29:23",
+    "query": "Show me all electronics products available in your store.",
+    "full_query": "Show me all electronics products available in your store.",
+    "version": "V6",
+    "full_version": "V6 \u2014 RAG + ReAct",
+    "provider": "GEMINI",
+    "latency_ms": 10204,
+    "iterations": 2,
+    "tools_called": [
+      "list_products"
+    ],
+    "tools_str": "list_products",
+    "answer_preview": "Here are the electronics products available in our store: 1. UltraBook Pro 14 - \u20b91099.99 2...",
+    "status": "\u2705 Success"
+  },
+  {
+    "id": "LIVE-009",
+    "time": "10:32:18",
+    "query": "laptop asus",
+    "full_query": "laptop asus",
+    "version": "V6",
+    "full_version": "V6 \u2014 RAG + ReAct",
+    "provider": "GEMINI",
+    "latency_ms": 23514,
+    "iterations": 4,
+    "tools_called": [
+      "get_product_info",
+      "list_products",
+      "get_product_info"
+    ],
+    "tools_str": "get_product_info, list_products, get_product_info",
+    "answer_preview": "I found a laptop that might interest you: UltraBook Pro 14, priced at \u20b91099.99. It feature...",
+    "status": "\u2705 Success"
+  },
+  {
+    "id": "LIVE-010",
+    "time": "10:34:56",
+    "query": "Change the quantity of the 4K Smart TV in order ORD1016 to 2.",
+    "full_query": "Change the quantity of the 4K Smart TV in order ORD1016 to 2.",
+    "version": "V6",
+    "full_version": "V6 \u2014 RAG + ReAct",
+    "provider": "OPENAI",
+    "latency_ms": 11383,
+    "iterations": 2,
+    "tools_called": [
+      "get_order_status"
+    ],
+    "tools_str": "get_order_status",
+    "answer_preview": "To modify order ORD1016, please provide your name for ownership verification.",
+    "status": "\u2705 Success"
+  },
+  {
+    "id": "LIVE-011",
+    "time": "10:36:10",
+    "query": "Show me all electronics products available in your store.",
+    "full_query": "Show me all electronics products available in your store.",
+    "version": "V6",
+    "full_version": "V6 \u2014 RAG + ReAct",
+    "provider": "ANTHROPIC",
+    "latency_ms": 12969,
+    "iterations": 2,
+    "tools_called": [
+      "list_products"
+    ],
+    "tools_str": "list_products",
+    "answer_preview": "Here are the electronics products available in our store: 1. UltraBook Pro 14 - \u20b91099.99 2...",
+    "status": "\u2705 Success"
   }
 ]

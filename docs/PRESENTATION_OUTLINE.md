@@ -11,23 +11,23 @@
 * **Unconstrained LLMs Invent Facts:** Zero-shot generative models hallucinate fake order statuses, make up non-existent tracking IDs (e.g., `TRK-MADE-UP`), and invent return policies.
 * **Real-World Impact:** Misinforming customers erodes trust, escalates dispute ticket volumes, and causes financial losses through unauthorized return promises.
 * **The Solution:** A structured, multi-step prompt engineering progression combining **ReAct reasoning** and **RAG grounding** to constrain model actions to verified store data.
-* **Core Objective:** Improve task success and reliability on order operations (enforcing mandatory ownership verification, preventing fabricated data), raising task success from **46.7%** (7/15, 95% Wilson CI [24.8%–69.9%]) in V1 to **100.0%** (15/15, 95% Wilson CI [79.6%–100.0%]) in V6. Tool call accuracy is N/A for V1 and V2 (no tools defined), and rises from **86.7%** (13/15) in V3 to **100.0%** (15/15) in V6. Hallucination rate is observed at **20.0%** (3/15, [7.0%–45.2%]) in V1 vs **0.0%** (0/15, [0.0%–20.4%]) in V6.
+* **Core Objective:** Improve task success and reliability on order operations (enforcing mandatory ownership verification, preventing fabricated data), raising task success from **46.7%** (7/15, 95% Wilson CI [24.8%–69.9%]) in V1 to **93.3%** (14/15, 95% Wilson CI [70.2%–98.8%]) in V6. Tool call accuracy is N/A for V1 and V2 (no tools defined), and rises from **86.7%** (13/15) in V3 to **93.3%** (14/15) in V6. Hallucination rate is observed at **20.0%** (3/15, [7.0%–45.2%]) in V1 vs **6.7%** (1/15, [1.2%–29.8%]) in V6 (and 0.0% in the separate $T=0.3$ parameter sweep).
 
 > **Speaker Notes:**  
-> "Welcome everyone. In e-commerce customer support, generative AI is a double-edged sword: models sound remarkably articulate, but without structural constraints, they comfortably fabricate order tracking codes or invent unauthorized return windows. This project demonstrates how systematic, iterative prompt engineering—transitioning from naive zero-shot prompts to structured ReAct loops and RAG retrieval—can eliminate ungrounded answers and improve task success to 100.0% across our standardized benchmark evaluation."
+> "Welcome everyone. In e-commerce customer support, generative AI is a double-edged sword: models sound remarkably articulate, but without structural constraints, they comfortably fabricate order tracking codes or invent unauthorized return windows. This project demonstrates how systematic, iterative prompt engineering—transitioning from naive zero-shot prompts to structured ReAct loops and RAG retrieval—can drastically reduce ungrounded answers (reaching 0.0% ungrounded in our standardized design-set benchmark) and improve task success to 93.3% across our standardized benchmark evaluation (and 100.0% in our T=0.3 parameter sweep)."
 
 ---
 
 ## Slide 2: System Architecture & Execution Loop [CO1, CO4]
 
 ### Title: Architecture — Dynamic ReAct & RAG Loop
-* **Multi-Provider Backend:** Primary inference on Groq (`qwen/qwen3.8-27b`) for low latency (~775ms/step, median end-to-end V6 latency 1,550 ms), backed by OpenRouter (Llama 3.3 70B), Gemini 2.5 Flash, Anthropic Claude Sonnet 4, and OpenAI GPT-4o-mini fallbacks.
+* **Multi-Provider Backend:** Primary live-tested inference on Groq (`qwen/qwen3.8-27b`) for low latency (~775ms/step, median end-to-end V6 latency 1,550 ms) and OpenRouter (Llama 3.3 70B); integrated, mock-tested fallbacks for Gemini 2.5 Flash, Anthropic Claude Sonnet 4, and OpenAI GPT-4o-mini.
 * **Deterministic ReAct Engine:** Multi-turn cycle: `Thought:` (internal reasoning) $\rightarrow$ `Action:` (tool selection) $\rightarrow$ `Action Input:` (JSON schema arguments) $\rightarrow$ `Observation:` (execution result) $\rightarrow$ `finish`.
 * **Domain Tool Registry:** 9 real-time operational tools spanning live order placement, cancellation, quantity modification, catalog browsing, order lookup, return eligibility, refund math, and policy search.
 * **RAG Pipeline:** bi-gram TF-IDF vectorizer over store policies (`data/policy.md` and `data/faq.md`), injecting top-3 matching chunks directly into the prompt context.
 
 > **Speaker Notes:**  
-> "Here is our end-to-end architecture. When a customer sends a query, it enters a ReAct loop capped at 5 iterations. The model cannot answer factual questions blindly. Instead, it must first output a structured Thought, select an Action from our 9 core tools, and supply strictly validated JSON arguments. The Python backend executes the tool against our database, feeds back an Observation, and the model synthesizes a final verified answer. Policy inquiries automatically trigger our bi-gram TF-IDF RAG pipeline to ground responses in store policies."
+> "Here is our end-to-end architecture. When a customer sends a query, it enters a ReAct loop capped at 5 iterations. The model cannot answer factual questions without tool grounding. Instead, it must first output a structured Thought, select an Action from our 9 core tools, and supply strictly validated JSON arguments. The Python backend executes the tool against our database, feeds back an Observation, and the model synthesizes a final verified answer. Policy inquiries automatically trigger our bi-gram TF-IDF RAG pipeline to ground responses in store policies."
 
 ---
 
@@ -39,25 +39,26 @@
 * **V3 (Few-Shot Exemplars):** Injected 3 annotated tool-calling dialogues. Tool call accuracy was N/A for V1 and V2 (no tools defined) and reached 86.7% (13/15) in V3; task success 86.7% (13/15) [62.1%–96.3%].
 * **V4 (Chain-of-Thought):** Explicit step-by-step reasoning decomposed product categories (14d electronics vs 30d general items); task success 86.7% (13/15), tool accuracy 93.3% (14/15), hallucination 13.3% (2/15) [3.7%–37.9%].
 * **V5 (ReAct Loop):** Autonomous multi-step tool chaining enabled complex workflows (order lookup $\rightarrow$ return check $\rightarrow$ refund calculation), lifting task success to 93.3% (14/15) [70.2%–98.8%] and observing 6.7% hallucination (1/15).
-* **V6 (RAG + ReAct):** Injected dynamic policy chunks and strict negative constraints: **100.0% task success (15/15) [Wilson 95% CI: 79.6%–100.0%], 100.0% tool accuracy (15/15), 0.0% hallucination (0/15) [0.0%–20.4%]**.
+* **V6 (RAG + ReAct):** Injected dynamic policy chunks and strict negative constraints: **93.3% task success (14/15) [Wilson 95% CI: 70.2%–98.8%], 93.3% tool accuracy (14/15), 6.7% hallucination (1/15) [1.2%–29.8%]** (100.0% task success and 0.0% hallucination in separate $T=0.3$ parameter sweep).
 
 > **Speaker Notes:**  
-> "This slide illustrates our core prompt engineering methodology. Rather than tweaking prompts randomly, each version targeted a specific empirical failure mode discovered in the previous test run. V2 fixed persona and boundary constraints, V3 taught JSON syntax via few-shot examples, V4 eliminated electronics category errors through Chain-of-Thought decomposition, V5 introduced multi-step action chaining, and V6 solved knowledge hallucination by coupling the ReAct loop with bi-gram TF-IDF RAG grounding."
+> "This slide illustrates our core prompt engineering methodology. Rather than tweaking prompts randomly, each version targeted a specific empirical failure mode discovered in the previous test run. V2 fixed persona and boundary constraints, V3 taught JSON syntax via few-shot examples, V4 resolved electronics category errors through Chain-of-Thought decomposition, V5 introduced multi-step action chaining, and V6 addressed knowledge hallucination by coupling the ReAct loop with bi-gram TF-IDF RAG grounding."
 
 ---
 
 ## Slide 4: Empirical Benchmark Results [CO5, CO6]
 
 ### Title: Empirical Evaluation Metrics (15 Curated Test Queries)
-* **Task Success:** Scaled from **46.7% (7/15)** in V1 $\rightarrow$ **80.0% (12/15)** in V2 $\rightarrow$ **86.7% (13/15)** in V3/V4 $\rightarrow$ **93.3% (14/15)** in V5 $\rightarrow$ **100.0% (15/15)** in V6.
-* **Tool Call Accuracy:** N/A in V1/V2 (no tools defined) $\rightarrow$ **86.7% (13/15)** in V3 $\rightarrow$ **93.3% (14/15)** in V4 $\rightarrow$ **80.0% (12/15)** in V5 $\rightarrow$ **100.0% (15/15)** in V6.
+* **Methodological Note:** Prompt ladder is not controlled for temperature and provider (V1 evaluated at $T=0.7$/0.3, V2 at $T=0.5$, V3–V6 at $T=0.3$; progression is directional and confounded).
+* **Task Success:** Scaled from **46.7% (7/15)** in V1 $\rightarrow$ **80.0% (12/15)** in V2 $\rightarrow$ **86.7% (13/15)** in V3/V4 $\rightarrow$ **93.3% (14/15)** in V5 $\rightarrow$ **93.3% (14/15)** in V6.
+* **Tool Call Accuracy:** N/A in V1/V2 (no tools defined) $\rightarrow$ **86.7% (13/15)** in V3 $\rightarrow$ **93.3% (14/15)** in V4 $\rightarrow$ **80.0% (12/15)** in V5 $\rightarrow$ **93.3% (14/15)** in V6.
 * **Ungrounded Rate:** Dropped from **26.7% (4/15)** in V1/V2 down to **0.0% (0/15)** in V6 as retrieval grounding replaced parametric answers.
-* **Hallucination Directional Shift:** Observed at **20.0% (3/15)** in V1 and **13.3% (2/15)** in V4 down to **0.0% (0/15)** in V6.
+* **Hallucination Directional Shift:** Observed at **20.0% (3/15)** in V1 and **13.3% (2/15)** in V4 down to **6.7% (1/15)** in V6.
 * **Date Claim Error Supplementary Check:** 0.0% (0/15) across all stored benchmark answers; audits live model phrasing attaching order dates to shipment statuses when delivery date is null (e.g. Prompt Inspector screenshot).
-* **Why V5 Hallucination Differs from V4:** Under unified ground-truth scoring, V4 has 2 hallucinations (13.3%: Q07 and Q14) whereas V5 drops to 1 hallucination (6.7%: Q14). Multi-step tool chaining in V5 resolves operational errors by fetching actual delivery dates before evaluating returns. However, on adversarial policy traps (Q14), both V4 and V5 lack policy retrieval tools, proving that action execution alone cannot replace RAG knowledge grounding.
+* **Why V5 Hallucination Differs from V4:** Under unified ground-truth scoring, V4 has 2 hallucinations (13.3%: Q07 and Q14) whereas V5 drops to 1 hallucination (6.7%: Q14). Multi-step tool chaining in V5 resolves operational errors by fetching actual delivery dates before evaluating returns. However, on adversarial policy traps (Q14), both V4 and V5 lack policy retrieval tools, showing that action execution alone cannot replace RAG knowledge grounding.
 
 > **Speaker Notes:**  
-> "Our evaluation dataset consists of 15 standardized queries categorized into order lookups, product QA, return eligibility, policy RAG, and adversarial traps. Each query accounts for 6.7 percentage points. As seen in our benchmark matrix, V6 achieves perfection across all 15 queries. Under rigorous ground-truth scoring, V5 drops hallucinations from 13.3% down to 6.7% because multi-step action execution grounds operational order checks in database reality. However, policy traps like Q14 still fail in V5 because action loops alone lack store policy texts—which only V6's RAG integration successfully grounds."
+> "Our evaluation dataset consists of 15 standardized queries categorized into order lookups, product QA, return eligibility, policy RAG, and adversarial traps. Each query accounts for 6.7 percentage points. As seen in our benchmark matrix, V6 achieves 93.3% task success and 93.3% tool accuracy on the canonical suite (and 100% in the T=0.3 parameter sweep). Under rigorous ground-truth scoring, V5 drops hallucinations from 13.3% down to 6.7% because multi-step action execution grounds operational order checks in database reality. However, policy traps like Q14 still fail in V5 because action loops alone lack store policy texts—which only V6's RAG integration successfully grounds."
 
 ---
 
@@ -97,8 +98,8 @@
 ## Slide 7: Limitations & Threats to Validity [CO5, CO6]
 
 ### Title: Engineering Limitations & Real-World Constraints
-* **Evaluation Sample Size:** The benchmark suite contains 15 curated queries. While representative of core edge cases, each query represents 6.7 percentage points; 95% Wilson CI for 15/15 is [79.6%–100.0%].
-* **Held-Out Generalization Suite:** An unseen held-out suite of 21 queries (`eval/test_queries_heldout.json`, including injection attacks H14, H15, H19–H21) was evaluated on V6 without subsequent prompt tuning, achieving 57.1% task success (12/21) [36.5%–75.5%], 38.1% tool accuracy (8/21) [20.8%–59.1%], 0.0% hallucination (0/21) [0.0%–15.5%], and 9.5% ungrounded (2/21) [2.7%–28.9%]. A separate held-out v2 set (20 queries with verified caller names) achieved 90.0% task success and 90.0% tool accuracy with 0.0% hallucination.
+* **Evaluation Sample Size:** The benchmark suite contains 15 curated queries. While representative of core edge cases, each query represents 6.7 percentage points; 95% Wilson CI for 14/15 is [70.2%–98.8%].
+* **Held-Out Generalization Suite:** An unseen held-out suite of 21 queries (`eval/test_queries_heldout.json`, including injection attacks H14, H15, H19–H21) was evaluated on V6 without subsequent prompt tuning, achieving 57.1% task success (12/21) [36.5%–75.5%], 38.1% tool accuracy (8/21) [20.8%–59.1%], 0.0% hallucination (0/21) [0.0%–15.5%], and 9.5% ungrounded (2/21) [2.7%–28.9%]. A separate Held-out v2 (post-hoc suite, authored after analyzing held-out v1; optimistic) (20 queries with verified caller names) achieved 90.0% task success and 90.0% tool accuracy with 0.0% hallucination.
 * **Synthetic Seed Datasets & SQLite Storage:** Initialized from seed datasets (`orders.json` containing 21 orders, `products.json` containing 15 products) loaded into an ACID SQLite database (`data/shopease.db`). High-volume enterprise stores with thousands of SKUs require distributed relational indexing.
 * **Lexical vs Dense Retrieval:** Our lexical bi-gram TF-IDF vectorizer uses exact n-gram token overlap. Synonyms or out-of-vocabulary user phrasing may occasionally miss policy chunks that dense neural embeddings (e.g. BGE/OpenAI embeddings) would capture.
 * **Ground-Truth Regex Scoring:** Hallucinations and task success are evaluated against ground-truth facts from SQLite and `data/policy.md` using regex patterns for required and forbidden content under unified `eval/scoring.py`.
@@ -118,5 +119,5 @@
 * **Future Work — Multi-Turn Session Memory:** Integrate session-level state machines and vector-indexed conversation history for long multi-day customer inquiries.
 
 > **Speaker Notes:**  
-> "In conclusion, ShopEase AI proves that no hallucination was observed in 15 design queries [95% Wilson CI: 0.0%–20.4%] (and 0/21 on held-out v1, 0/20 on held-out v2; pooled 0/56 [0.0%–6.4%]) when using disciplined prompt engineering and tool grounding. By pairing ReAct multi-step reasoning with RAG, we achieved a reliable, safe assistant. Future iterations will focus on dense vector retrieval, production database connectors, and human-in-the-loop escalation. Thank you, and I look forward to your questions."
+> "In conclusion, ShopEase AI demonstrates that no hallucination was observed in these Groq runs: 14/15 design queries, 21/21 held-out v1 queries, and 20/20 held-out v2 queries. Note that V6 on OpenRouter had 3/15 hallucinations and that the design set was used for tuning, so tuned and post-hoc sets are not pooled into a single interval. By pairing ReAct multi-step reasoning with RAG, we achieved a reliable, safe assistant. Future iterations will focus on dense vector retrieval, production database connectors, and human-in-the-loop escalation. Thank you, and I look forward to your questions."
 

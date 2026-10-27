@@ -132,9 +132,42 @@ def check_documents():
     if lim_count > 1:
         err(f"README: contains {lim_count} 'Limitations' sections; must be merged into one.")
 
-    # 12. Check held-out injection counts in README: H14, H15, H19–H21
-    if "H19–H21" in readme and "H14, H15" not in readme:
-        err("README: held-out injection count should include H14, H15, H19–H21.")
+    # 13. Check V6 metrics match single source of truth from eval.render_readme_tables
+    sys.path.insert(0, str(ROOT))
+    from eval.render_readme_tables import get_benchmark_v6_kpis
+    kpis = get_benchmark_v6_kpis()
+    
+    # Assert UI-facing V6 task success and hallucination are 93.3% and 6.7%
+    assert kpis["v6_success_pct"] == 93.3, f"UI V6 success {kpis['v6_success_pct']} != 93.3"
+    assert kpis["v6_tool_pct"] == 93.3, f"UI V6 tool acc {kpis['v6_tool_pct']} != 93.3"
+    assert kpis["v6_halluc_pct"] == 6.7, f"UI V6 hallucination {kpis['v6_halluc_pct']} != 6.7"
+
+    # 14. Check README prompt refinement table matches UI-facing numbers (must NOT claim 100% in refinement table)
+    if "| **V6 — RAG + ReAct** | bi-gram TF-IDF RAG + ReAct Loop | Injects live policy chunks into context with strict negative rules. | **100.0%**" in readme:
+        err("README: Prompt refinement table still lists V6 as 100.0% task success; must match UI/CSV truth (93.3%, 14/15).")
+
+    if "| **V6 — RAG + ReAct** | TF-IDF RAG + ReAct Loop | Injects live policy chunks into context with strict negative rules. | **100.0%**" in readme:
+        err("README: Prompt refinement table still lists V6 as 100.0% task success; must match UI/CSV truth (93.3%, 14/15).")
+
+    # 15. Check Reviewed Score 100.0% is removed from headlines/tables
+    for name, text in [("README", readme), ("REPORT", report), ("OUTLINE", outline), ("VERIF", verif)]:
+        if "Reviewed Score (Supplementary): **100.0%**" in text or "Reviewed Score 100.0% (21/21)" in text:
+            err(f"{name}: contains 'Reviewed Score 100.0%'; must be labeled as exploratory agent review and removed from headlines.")
+
+    # 16. Check Held-out v2 disclosure
+    for name, text in [("README", readme), ("REPORT", report), ("OUTLINE", outline), ("VERIF", verif)]:
+        if "Held-out v2" in text and "post-hoc" not in text and "optimistic" not in text:
+            err(f"{name}: mentions 'Held-out v2' without labeling it as post-hoc / optimistic.")
+
+    # 17. Check controlled-ladder disclosure
+    for name, text in [("README", readme), ("REPORT", report), ("OUTLINE", outline)]:
+        if "Prompt ladder is not controlled for temperature and provider" not in text:
+            err(f"{name}: missing required controlled-ladder disclosure note.")
+
+    # 18. Check provider claims
+    for name, text in [("README", readme), ("REPORT", report), ("OUTLINE", outline), ("VERIF", verif)]:
+        if "fully integrated and tested" in text:
+            err(f"{name}: contains 'fully integrated and tested'; must be softened to live-tested vs mock-tested.")
 
     if errors:
         print(f"\n❌ Consistency check failed with {len(errors)} errors:")

@@ -102,6 +102,10 @@ def init_telemetry_tables():
         ("trace_a", "TEXT DEFAULT ''"),
         ("trace_b", "TEXT DEFAULT ''"),
         ("query", "TEXT DEFAULT ''"),
+        ("a_config", "TEXT DEFAULT ''"),
+        ("b_config", "TEXT DEFAULT ''"),
+        ("swapped", "INTEGER DEFAULT 0"),
+        ("protocol", "TEXT DEFAULT 'legacy, non-blind'"),
     ]:
         if col_name not in existing_cols:
             c.execute(f"ALTER TABLE ab_log ADD COLUMN {col_name} {col_type}")
@@ -231,13 +235,14 @@ def get_telemetry_summary_markdown() -> str:
         return "*No telemetry runs recorded yet.*"
     
     lines = [
-        "| Version | Total Runs | Avg Latency | Avg Prompt Tokens | Avg Completion Tokens | Total Cost (USD) |",
+        "| Version | Total Runs | Avg Latency | Avg Prompt Tokens | Avg Completion Tokens | Total Cost (INR) |",
         "|:---|:---:|:---:|:---:|:---:|:---:|",
     ]
     for a in aggs:
+        cost_inr = a['total_cost_usd'] * 83.0
         lines.append(
             f"| **{a['version']}** | {a['total_runs']} | {a['avg_latency_ms']:.1f} ms | "
-            f"{a['avg_prompt_tokens']} | {a['avg_completion_tokens']} | ${a['total_cost_usd']:.5f} |"
+            f"{a['avg_prompt_tokens']} | {a['avg_completion_tokens']} | ₹{cost_inr:.4f} |"
         )
     return "\n".join(lines)
 
@@ -255,19 +260,31 @@ def log_ab_vote(
     answer_a: str,
     answer_b: str,
     vote: str,
+    a_config: str = "",
+    b_config: str = "",
+    swapped: int = 0,
+    protocol: str = "blind",
+    tokens_a: int = 0,
+    tokens_b: int = 0,
+    latency_a_ms: float = 0.0,
+    latency_b_ms: float = 0.0,
+    trace_a: str = "",
+    trace_b: str = "",
 ) -> int:
-    """Log an A/B user vote ('A', 'B', or 'Tie') into SQLite ab_log."""
+    """Log an A/B user vote ('A', 'B', or 'Tie') into SQLite ab_log under blind protocol."""
     ts = datetime.now(timezone.utc).isoformat()
     conn = get_db_connection()
     c = conn.cursor()
     c.execute("""
     INSERT INTO ab_log (
         timestamp, prompt, query, version_a, temp_a, version_b, temp_b,
-        answer_a, answer_b, vote
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        answer_a, answer_b, vote, a_config, b_config, swapped, protocol,
+        tokens_a, tokens_b, latency_a_ms, latency_b_ms, trace_a, trace_b
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         ts, prompt, prompt, version_a, temp_a, version_b, temp_b,
-        answer_a, answer_b, vote
+        answer_a, answer_b, vote, a_config, b_config, int(swapped), protocol,
+        int(tokens_a), int(tokens_b), float(latency_a_ms), float(latency_b_ms), trace_a, trace_b
     ))
     conn.commit()
     row_id = c.lastrowid
@@ -290,6 +307,10 @@ def log_ab_comparison(
     latency_b_ms: float = 0.0,
     trace_a: str = "",
     trace_b: str = "",
+    a_config: str = "",
+    b_config: str = "",
+    swapped: int = 0,
+    protocol: str = "blind",
 ) -> int:
     """Log an A/B comparison run into SQLite ab_log with empty/uncast vote."""
     ts = datetime.now(timezone.utc).isoformat()
@@ -299,12 +320,13 @@ def log_ab_comparison(
     INSERT INTO ab_log (
         timestamp, prompt, query, version_a, temp_a, version_b, temp_b,
         answer_a, answer_b, vote, tokens_a, tokens_b, latency_a_ms, latency_b_ms,
-        trace_a, trace_b
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        trace_a, trace_b, a_config, b_config, swapped, protocol
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         ts, prompt, prompt, version_a, temp_a, version_b, temp_b,
         answer_a, answer_b, vote, int(tokens_a), int(tokens_b),
-        float(latency_a_ms), float(latency_b_ms), trace_a, trace_b
+        float(latency_a_ms), float(latency_b_ms), trace_a, trace_b,
+        a_config, b_config, int(swapped), protocol
     ))
     conn.commit()
     row_id = c.lastrowid
@@ -313,13 +335,15 @@ def log_ab_comparison(
 
 
 def get_ab_summary() -> dict:
-    """Get win counts and percentages from ab_log, counting only recorded non-empty votes."""
+    """Get win counts from ab_log, counting only recorded non-empty votes."""
     conn = get_db_connection()
     c = conn.cursor()
     rows = c.execute("SELECT vote, COUNT(*) as cnt FROM ab_log WHERE vote IS NOT NULL AND TRIM(vote) != '' GROUP BY vote").fetchall()
+    legacy_rows = c.execute("SELECT COUNT(*) as cnt FROM ab_log WHERE vote IS NOT NULL AND TRIM(vote) != '' AND (protocol LIKE '%legacy%' OR protocol = '' OR protocol IS NULL)").fetchone()
+    legacy_cnt = legacy_rows["cnt"] if legacy_rows else 0
     conn.close()
     
-    counts = {"A": 0, "B": 0, "Tie": 0, "Total": 0}
+    counts = {"A": 0, "B": 0, "Tie": 0, "Total": 0, "Legacy": legacy_cnt}
     for r in rows:
         v = r["vote"]
         if v in counts:
@@ -329,7 +353,7 @@ def get_ab_summary() -> dict:
 
 
 def get_ab_win_report() -> str:
-    """Report win counts reading only recorded votes, printing 'no votes recorded yet' if there are none."""
+    """Report win counts reading only recorded votes with count/n, never percentage-only."""
     s = get_ab_summary()
     if s["Total"] == 0:
         return "no votes recorded yet"
@@ -337,7 +361,11 @@ def get_ab_win_report() -> str:
     p_a = round((s["A"] / tot) * 100, 1)
     p_b = round((s["B"] / tot) * 100, 1)
     p_tie = round((s["Tie"] / tot) * 100, 1)
-    return f"Model A: {s['A']} ({p_a}%), Model B: {s['B']} ({p_b}%), Ties: {s['Tie']} ({p_tie}%), Total Votes: {tot}"
+    note = " (anecdotal sample, not statistically meaningful)" if tot < 10 else ""
+    return (
+        f"Model A: {s['A']}/{tot} ({p_a}%), Model B: {s['B']}/{tot} ({p_b}%), Ties: {s['Tie']}/{tot} ({p_tie}%), "
+        f"Total Votes: {tot}{note}. Legacy non-blind votes: {s.get('Legacy', 0)}"
+    )
 
 
 def export_ab_log_csv(filepath: Path | str | None = None) -> str:
@@ -354,11 +382,11 @@ def export_ab_log_csv(filepath: Path | str | None = None) -> str:
     rows = c.execute("SELECT * FROM ab_log ORDER BY id DESC").fetchall()
     conn.close()
     
-    headers = ["id", "timestamp", "prompt", "version_a", "temp_a", "version_b", "temp_b", "answer_a", "answer_b", "vote"]
+    headers = ["id", "timestamp", "prompt", "version_a", "temp_a", "version_b", "temp_b", "answer_a", "answer_b", "vote", "a_config", "b_config", "swapped", "protocol"]
     with open(filepath, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(headers)
         for r in rows:
-            writer.writerow([r[h] for h in headers])
+            writer.writerow([r[h] if h in r.keys() else "" for h in headers])
             
     return str(filepath)

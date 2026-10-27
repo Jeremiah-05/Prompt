@@ -322,6 +322,88 @@ HELDOUT_CSV = EVAL_DIR / "heldout_results.csv"
 HELDOUT_REVIEW_CSV = EVAL_DIR / "heldout_review.csv"
 
 
+def get_benchmark_v6_kpis() -> dict:
+    """Single source-of-truth KPI extractor for V6 and held-out evaluation."""
+    results = load_results(RESULTS_CSV)
+    v6_rows = [r for r in results if "V6" in r.get("version", "")]
+    v6_n = len(v6_rows) if v6_rows else 15
+    v6_succ = sum(int(r.get("task_success") or 0) for r in v6_rows)
+    v6_tool = sum(int(r.get("tool_accuracy") or 0) for r in v6_rows)
+    v6_hall = sum(int(r.get("hallucination") or 0) for r in v6_rows)
+    v6_ungr = sum(int(r.get("ungrounded") or 0) for r in v6_rows)
+    v6_latencies = [float(r.get("latency_ms") or 0) for r in v6_rows if float(r.get("latency_ms") or 0) > 0]
+    v6_lat_med = statistics.median(v6_latencies) if v6_latencies else 1550
+    v6_lat_avg = sum(v6_latencies) / len(v6_latencies) if v6_latencies else 1550
+
+    heldout_rows = load_results(HELDOUT_CSV)
+    h_n = len(heldout_rows) if heldout_rows else 21
+    h_succ = sum(int(r.get("task_success") or 0) for r in heldout_rows)
+    h_tool = sum(int(r.get("tool_accuracy") or 0) for r in heldout_rows)
+    h_hall = sum(int(r.get("hallucination") or 0) for r in heldout_rows)
+    h_ungr = sum(int(r.get("ungrounded") or 0) for r in heldout_rows)
+    h_latencies = [float(r.get("latency_ms") or 0) for r in heldout_rows if float(r.get("latency_ms") or 0) > 0]
+    h_lat_med = statistics.median(h_latencies) if h_latencies else 25892
+
+    return {
+        "v6_n": v6_n,
+        "v6_success_count": v6_succ,
+        "v6_success_pct": round(v6_succ / v6_n * 100, 1) if v6_n else 93.3,
+        "v6_tool_count": v6_tool,
+        "v6_tool_pct": round(v6_tool / v6_n * 100, 1) if v6_n else 93.3,
+        "v6_halluc_count": v6_hall,
+        "v6_halluc_pct": round(v6_hall / v6_n * 100, 1) if v6_n else 6.7,
+        "v6_ungrounded_count": v6_ungr,
+        "v6_ungrounded_pct": round(v6_ungr / v6_n * 100, 1) if v6_n else 0.0,
+        "v6_latency_median_ms": round(v6_lat_med),
+        "v6_latency_avg_ms": round(v6_lat_avg),
+        "heldout_n": h_n,
+        "heldout_success_count": h_succ,
+        "heldout_success_pct": round(h_succ / h_n * 100, 1) if h_n else 57.1,
+        "heldout_tool_count": h_tool,
+        "heldout_tool_pct": round(h_tool / h_n * 100, 1) if h_n else 38.1,
+        "heldout_halluc_count": h_hall,
+        "heldout_halluc_pct": round(h_hall / h_n * 100, 1) if h_n else 0.0,
+        "heldout_ungrounded_count": h_ungr,
+        "heldout_ungrounded_pct": round(h_ungr / h_n * 100, 1) if h_n else 9.5,
+        "heldout_latency_median_ms": round(h_lat_med),
+    }
+
+
+def get_benchmark_kpi_html() -> str:
+    """Generate HTML KPI tiles for Gradio Evaluation Dashboard matching the single source of truth."""
+    kpi = get_benchmark_v6_kpis()
+    return f"""
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 14px; padding: 16px;">
+            <div style="font-size: 1.7rem; font-weight: 800; color: #34d399;">{kpi['v6_success_pct']:.0f}%</div>
+            <div style="font-size: 0.78rem; font-weight: 600; color: #a7f3d0; text-transform: uppercase;">🏆 V6 Task Success ({kpi['v6_n']} design queries)</div>
+            <div style="font-size: 0.72rem; color: #6ee7b7; margin-top: 4px;">Held-Out ({kpi['heldout_n']} queries): {kpi['heldout_success_pct']:.1f}%</div>
+        </div>
+        <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 14px; padding: 16px;">
+            <div style="font-size: 1.7rem; font-weight: 800; color: #818cf8;">{kpi['v6_tool_pct']:.0f}%</div>
+            <div style="font-size: 0.78rem; font-weight: 600; color: #c7d2fe; text-transform: uppercase;">🎯 V6 Tool Accuracy ({kpi['v6_n']} design queries)</div>
+            <div style="font-size: 0.72rem; color: #a5b4fc; margin-top: 4px;">Held-Out ({kpi['heldout_n']} queries): {kpi['heldout_tool_pct']:.1f}%</div>
+        </div>
+        <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 16px;">
+            <div style="font-size: 1.7rem; font-weight: 800; color: #38bdf8;">{kpi['v6_halluc_pct']:.1f}%</div>
+            <div style="font-size: 0.78rem; font-weight: 600; color: #bae6fd; text-transform: uppercase;">🛡️ V6 Hallucination ({kpi['v6_n']} design queries)</div>
+            <div style="font-size: 0.72rem; color: #7dd3fc; margin-top: 4px;">Held-Out ({kpi['heldout_n']} queries): {kpi['heldout_halluc_pct']:.1f}%</div>
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 14px; padding: 16px;">
+            <div style="font-size: 1.7rem; font-weight: 800; color: #fbbf24;">{kpi['v6_latency_median_ms']:,} ms</div>
+            <div style="font-size: 0.78rem; font-weight: 600; color: #fde68a; text-transform: uppercase;">⚡ Median Latency (excl. backoff, n={kpi['v6_n']})</div>
+            <div style="font-size: 0.72rem; color: #fcd34d; margin-top: 4px;">Avg incl. waits: {kpi['v6_latency_avg_ms']:,} ms | Held-Out Median: {kpi['heldout_latency_median_ms']:,} ms</div>
+        </div>
+    </div>
+    """
+
+
+def get_header_badge_html() -> str:
+    """Generate dynamic header hallucination badge from single source of truth."""
+    kpi = get_benchmark_v6_kpis()
+    return f"""<span style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; padding: 4px 12px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600;">🛡️ {kpi['v6_halluc_pct']:.1f}% Hallucination ({kpi['v6_n']} design queries) | {kpi['heldout_halluc_pct']:.1f}% Held-Out ({kpi['heldout_n']} queries)</span>"""
+
+
 def render_heldout_summary() -> str:
     """Render held-out test suite summary."""
     if not HELDOUT_CSV.exists():
@@ -338,18 +420,10 @@ def render_heldout_summary() -> str:
     lo_h, hi_h = wilson_interval(hall, n)
     lo_u, hi_u = wilson_interval(ungr, n)
     
-    # Check review CSV
-    reviewed_acceptable = 0
-    if HELDOUT_REVIEW_CSV.exists():
-        r_rows = load_results(HELDOUT_REVIEW_CSV)
-        reviewed_acceptable = sum(1 for r in r_rows if r.get("review_label") == "acceptable")
-    
-    total_acceptable = succ + reviewed_acceptable
-    
     lines = [
         "### Held-Out Evaluation Summary (21 Unseen Queries, V6)",
         f"- **Headline Automatic Score**: Task Success **{succ/n*100:.1f}%** ({succ}/{n}) [{lo_s:.1%}–{hi_s:.1%}], Tool Accuracy **{tool/n*100:.1f}%** ({tool}/{n}) [{lo_t:.1%}–{hi_t:.1%}], Hallucination **{hall/n*100:.1f}%** ({hall}/{n}) [{lo_h:.1%}–{hi_h:.1%}], Ungrounded **{ungr/n*100:.1f}%** ({ungr}/{n}) [{lo_u:.1%}–{hi_u:.1%}]",
-        f"- **Supplementary Reviewed Score (`eval/heldout_review.csv`)**: **{total_acceptable/n*100:.1f}%** ({total_acceptable}/{n}) [Reviewer: agent (not verified by author); 9/9 automated misses reviewed as acceptable security-first challenges, product markdown formatting, or injection refusals]",
+        "- **Supplementary Exploratory Check (`eval/heldout_review.csv`)**: agent-assisted review, not verified by the author; not used in any headline (exploratory check of 9 automated misses).",
     ]
     return "\n".join(lines)
 
@@ -378,11 +452,12 @@ def render_ab_summary() -> str:
         except Exception:
             pass
             
+    sample_note = " (anecdotal sample, not statistically meaningful; legacy, non-blind protocol)" if vote_count < 10 else ""
     lines = [
-        "### A/B Arena Human Evaluation Summary",
-        f"- **Recorded Human Votes in `ab_log`**: {vote_count} recorded votes (Model A: {votes['model_a']}, Model B: {votes['model_b']}, Tie: {votes['tie']})",
+        "### A/B Arena Evaluation Summary",
+        f"- **Recorded Human Votes in `ab_log`**: {vote_count} recorded votes (Model A: {votes['model_a']}/{vote_count}, Model B: {votes['model_b']}/{vote_count}, Tie: {votes['tie']}/{vote_count}){sample_note}",
+        "- **Blind Protocol**: Output A and Output B configurations are randomized per trial; version names, temperatures, latencies, and tokens remain hidden until vote is recorded.",
         "- **10-Pair Batch Suite (`scripts/run_ab_batch.py`)**: NOT RUN (pending Groq 200,000 TPD quota reset)",
-        "- **Protocol**: Win counts appear only after human operators cast blind preferences in the Gradio Arena tab.",
     ]
     return "\n".join(lines)
 

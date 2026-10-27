@@ -65,11 +65,17 @@ from telemetry import (
     get_ab_summary,
     export_ab_log_csv,
 )
+from eval.render_readme_tables import (
+    get_benchmark_kpi_html,
+    get_header_badge_html,
+    get_benchmark_v6_kpis,
+)
 
 
 # ---------------------------------------------------------------------------
-# Paths
+# Global State & Paths
 # ---------------------------------------------------------------------------
+LAST_ACTIVE_PROVIDER = {"provider": "Groq", "model": "qwen/qwen3.8-27b"}
 BASE_DIR = Path(__file__).parent
 EVAL_DIR = BASE_DIR / "eval"
 RESULTS_CSV = EVAL_DIR / "results.csv"
@@ -316,6 +322,9 @@ def run_react_loop(
             "Latest observation: " + (trace[-1]["observation"] if trace else "No observations.")
         )
     
+    LAST_ACTIVE_PROVIDER["provider"] = provider_used
+    LAST_ACTIVE_PROVIDER["model"] = model_used
+
     return {
         "answer": final_answer,
         "trace": trace,
@@ -434,11 +443,7 @@ def chat_handler(
     except Exception as e:
         print(f"Warning: live telemetry recording failed: {e}")
 
-    prov_str = result.get("provider", provider)
-    model_str = result.get("model", "")
-    footer = f"\n\n<div style='font-size: 0.75rem; color: #64748b; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 4px;'>⚡ Answered via {prov_str}" + (f" ({model_str})" if model_str else "") + "</div>"
-
-    return result["answer"] + footer
+    return result["answer"]
 
 # ---------------------------------------------------------------------------
 # Inspector tab handler
@@ -541,7 +546,7 @@ def get_inspector_data():
 # ---------------------------------------------------------------------------
 
 def load_results_csv() -> str:
-    """Load eval/results.csv and format as a clean Markdown table."""
+    """Load eval/results.csv and format as a clean, sanitized Markdown table."""
     if not RESULTS_CSV.exists():
         return "No evaluation results found. Run evaluation to generate `eval/results.csv`."
     
@@ -556,7 +561,14 @@ def load_results_csv() -> str:
     table = "| " + " | ".join(headers) + " |\n"
     table += "| " + " | ".join(["---"] * len(headers)) + " |\n"
     for row in rows:
-        table += "| " + " | ".join(str(row.get(h, "")) for h in headers) + " |\n"
+        cells = []
+        for h in headers:
+            val = str(row.get(h, "") or "")
+            clean_val = val.replace("\r\n", " ").replace("\n", " ").replace("|", "/")
+            if len(clean_val) > 120:
+                clean_val = clean_val[:117] + "..."
+            cells.append(clean_val)
+        table += "| " + " | ".join(cells) + " |\n"
     
     return table
 
@@ -692,61 +704,8 @@ def generate_eval_charts():
 
 
 def compute_benchmark_kpi_html() -> str:
-    """Calculate dynamically the latest V6 benchmark metrics from results.csv and heldout_results.csv."""
-    v6_success, v6_tool, v6_halluc, v6_latency = 100.0, 100.0, 0.0, 1550
-    v6_n = 15
-    if RESULTS_CSV.exists():
-        try:
-            with open(RESULTS_CSV, "r", encoding="utf-8") as f:
-                rows = list(csv.DictReader(f))
-            v6_rows = [r for r in rows if "V6" in r.get("version", "")]
-            if v6_rows:
-                v6_n = len(v6_rows)
-                v6_success = sum(float(r.get("task_success", 0)) for r in v6_rows) / v6_n * 100
-                v6_tool = sum(float(r.get("tool_accuracy", 0)) for r in v6_rows) / v6_n * 100
-                v6_halluc = sum(float(r.get("hallucination", 0)) for r in v6_rows) / v6_n * 100
-                v6_latency = round(sum(float(r.get("latency_ms", 0)) for r in v6_rows) / v6_n)
-        except Exception as e:
-            print(f"Warning computing benchmark KPIs: {e}")
-            
-    heldout_success, heldout_tool, heldout_halluc = 57.1, 38.1, 0.0
-    heldout_n = 21
-    if HELDOUT_RESULTS_CSV.exists():
-        try:
-            with open(HELDOUT_RESULTS_CSV, "r", encoding="utf-8") as f:
-                h_rows = list(csv.DictReader(f))
-            if h_rows:
-                heldout_n = len(h_rows)
-                heldout_success = sum(float(r.get("task_success", 0)) for r in h_rows) / heldout_n * 100
-                heldout_tool = sum(float(r.get("tool_accuracy", 0)) for r in h_rows) / heldout_n * 100
-                heldout_halluc = sum(float(r.get("hallucination", 0)) for r in h_rows) / heldout_n * 100
-        except Exception as e:
-            print(f"Warning computing heldout KPIs: {e}")
-    
-    return f"""
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
-        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 14px; padding: 16px;">
-            <div style="font-size: 1.7rem; font-weight: 800; color: #34d399;">{v6_success:.0f}%</div>
-            <div style="font-size: 0.78rem; font-weight: 600; color: #a7f3d0; text-transform: uppercase;">🏆 V6 Task Success ({v6_n} design queries)</div>
-            <div style="font-size: 0.72rem; color: #6ee7b7; margin-top: 4px;">Held-Out ({heldout_n} queries): {heldout_success:.1f}%</div>
-        </div>
-        <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 14px; padding: 16px;">
-            <div style="font-size: 1.7rem; font-weight: 800; color: #818cf8;">{v6_tool:.0f}%</div>
-            <div style="font-size: 0.78rem; font-weight: 600; color: #c7d2fe; text-transform: uppercase;">🎯 V6 Tool Accuracy ({v6_n} design queries)</div>
-            <div style="font-size: 0.72rem; color: #a5b4fc; margin-top: 4px;">Held-Out ({heldout_n} queries): {heldout_tool:.1f}%</div>
-        </div>
-        <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 16px;">
-            <div style="font-size: 1.7rem; font-weight: 800; color: #38bdf8;">{v6_halluc:.1f}%</div>
-            <div style="font-size: 0.78rem; font-weight: 600; color: #bae6fd; text-transform: uppercase;">🛡️ V6 Hallucination ({v6_n} design queries)</div>
-            <div style="font-size: 0.72rem; color: #7dd3fc; margin-top: 4px;">Held-Out ({heldout_n} queries): {heldout_halluc:.1f}%</div>
-        </div>
-        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 14px; padding: 16px;">
-            <div style="font-size: 1.7rem; font-weight: 800; color: #fbbf24;">{v6_latency} ms</div>
-            <div style="font-size: 0.78rem; font-weight: 600; color: #fde68a; text-transform: uppercase;">⚡ Avg Latency (T=0.3, n={v6_n})</div>
-            <div style="font-size: 0.72rem; color: #fcd34d; margin-top: 4px;">Held-Out Median: 25,892 ms</div>
-        </div>
-    </div>
-    """
+    """Calculate dynamically the latest V6 benchmark metrics from single source of truth."""
+    return get_benchmark_kpi_html()
 
 
 def run_live_benchmark_ui(
@@ -1021,7 +980,11 @@ QUICK_PROMPTS = [
 ]
 
 def get_header_provider_badge() -> str:
-    """Generate dynamic header provider badge based on real provider availability."""
+    """Generate dynamic header provider badge based on last answered reply or startup probe."""
+    prov = LAST_ACTIVE_PROVIDER.get("provider", "").title()
+    model = LAST_ACTIVE_PROVIDER.get("model", "")
+    if prov and model:
+        return f"⚡ {prov} ({model})"
     try:
         from llm_client import check_providers
         statuses = check_providers()
@@ -1040,8 +1003,9 @@ def get_header_provider_badge() -> str:
         return "⚡ Groq (qwen/qwen3.8-27b)"
 
 def build_ui() -> gr.Blocks:
-    """Build the modern 3-tab Gradio user interface."""
+    """Build the modern Gradio user interface."""
     prov_badge = get_header_provider_badge()
+    halluc_badge = get_header_badge_html()
     
     with gr.Blocks(title="ShopEase AI — Customer Service Bot") as app:
         
@@ -1062,7 +1026,7 @@ def build_ui() -> gr.Blocks:
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
                     <span class="live-indicator"><span class="pulse-dot"></span> System Online</span>
                     <span style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #a5b4fc; padding: 4px 12px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600;">{prov_badge}</span>
-                    <span style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; padding: 4px 12px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600;">🛡️ 0.0% Hallucination (15 design queries) | 0.0% Held-Out (21 queries)</span>
+                    {halluc_badge}
                 </div>
             </div>
         </div>
@@ -1489,18 +1453,25 @@ def build_ui() -> gr.Blocks:
                     p_a = round((s["A"] / tot) * 100, 1) if tot else 0
                     p_b = round((s["B"] / tot) * 100, 1) if tot else 0
                     p_tie = round((s["Tie"] / tot) * 100, 1) if tot else 0
+                    anecdotal_note = ""
+                    if tot < 10:
+                        anecdotal_note = f"""
+                        <div style="margin-top: 10px; font-size: 0.8rem; color: #fbbf24; text-align: center; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 6px 12px;">
+                            ⚠️ <strong>Sample Size Notice</strong>: n = {tot} (anecdotal sample, not statistically meaningful). Note: 3 existing records are legacy, non-blind.
+                        </div>
+                        """
                     return f"""
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 12px 0;">
                         <div style="background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); border-radius: 10px; padding: 12px; text-align: center;">
-                            <div style="font-size: 1.4rem; font-weight: 800; color: #818cf8;">{s['A']} ({p_a}%)</div>
-                            <div style="font-size: 0.76rem; color: #cbd5e1; text-transform: uppercase;">Model A Wins</div>
+                            <div style="font-size: 1.4rem; font-weight: 800; color: #818cf8;">{s['A']}/{tot} ({p_a}%)</div>
+                            <div style="font-size: 0.76rem; color: #cbd5e1; text-transform: uppercase;">Output A Wins</div>
                         </div>
                         <div style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; padding: 12px; text-align: center;">
-                            <div style="font-size: 1.4rem; font-weight: 800; color: #34d399;">{s['B']} ({p_b}%)</div>
-                            <div style="font-size: 0.76rem; color: #cbd5e1; text-transform: uppercase;">Model B Wins</div>
+                            <div style="font-size: 1.4rem; font-weight: 800; color: #34d399;">{s['B']}/{tot} ({p_b}%)</div>
+                            <div style="font-size: 0.76rem; color: #cbd5e1; text-transform: uppercase;">Output B Wins</div>
                         </div>
                         <div style="background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); border-radius: 10px; padding: 12px; text-align: center;">
-                            <div style="font-size: 1.4rem; font-weight: 800; color: #fbbf24;">{s['Tie']} ({p_tie}%)</div>
+                            <div style="font-size: 1.4rem; font-weight: 800; color: #fbbf24;">{s['Tie']}/{tot} ({p_tie}%)</div>
                             <div style="font-size: 0.76rem; color: #cbd5e1; text-transform: uppercase;">Ties</div>
                         </div>
                         <div style="background: rgba(148,163,184,0.15); border: 1px solid rgba(148,163,184,0.3); border-radius: 10px; padding: 12px; text-align: center;">
@@ -1508,6 +1479,7 @@ def build_ui() -> gr.Blocks:
                             <div style="font-size: 0.76rem; color: #cbd5e1; text-transform: uppercase;">Total Votes</div>
                         </div>
                     </div>
+                    {anecdotal_note}
                     """
 
                 ab_summary_box = gr.HTML(value=render_ab_summary_html())
@@ -1528,23 +1500,29 @@ def build_ui() -> gr.Blocks:
                         return f"⚠️ {msg}", "", "", "", "Invalid Input", {}
                     
                     clean_prompt, _ = redact_pii(prompt)
+
+                    # Step 4: Randomize which configuration is shown as Output A vs Output B (Blind Protocol)
+                    import random
+                    swapped = random.choice([True, False])
+                    target_a_ver, target_a_temp = (v_b, t_b) if swapped else (v_a, t_a)
+                    target_b_ver, target_b_temp = (v_a, t_a) if swapped else (v_b, t_b)
                     
                     with ThreadPoolExecutor(max_workers=2) as executor:
                         f_a = executor.submit(
                             run_react_loop,
                             user_message=clean_prompt,
                             chat_history=[],
-                            version=v_a,
+                            version=target_a_ver,
                             provider=provider.lower(),
-                            temperature=t_a,
+                            temperature=target_a_temp,
                         )
                         f_b = executor.submit(
                             run_react_loop,
                             user_message=clean_prompt,
                             chat_history=[],
-                            version=v_b,
+                            version=target_b_ver,
                             provider=provider.lower(),
-                            temperature=t_b,
+                            temperature=target_b_temp,
                         )
                         try:
                             res_a = f_a.result()
@@ -1557,27 +1535,8 @@ def build_ui() -> gr.Blocks:
                                 {},
                             )
 
-                    cost_a = calculate_cost_usd(provider, res_a.get("model", ""), res_a["total_tokens"]["prompt_tokens"], res_a["total_tokens"]["completion_tokens"])
-                    cost_b = calculate_cost_usd(provider, res_b.get("model", ""), res_b["total_tokens"]["prompt_tokens"], res_b["total_tokens"]["completion_tokens"])
-
-                    saved_state = {
-                        "prompt": clean_prompt,
-                        "version_a": v_a,
-                        "temp_a": t_a,
-                        "version_b": v_b,
-                        "temp_b": t_b,
-                        "answer_a": res_a.get("answer", ""),
-                        "answer_b": res_b.get("answer", ""),
-                    }
-
-                    badge_a = (
-                        f"**Model A ({v_a})** — ⏱️ {res_a.get('total_latency_ms', 0):.0f} ms | "
-                        f"🪙 {res_a['total_tokens']['total_tokens']} tokens\n\n"
-                    )
-                    badge_b = (
-                        f"**Model B ({v_b})** — ⏱️ {res_b.get('total_latency_ms', 0):.0f} ms | "
-                        f"🪙 {res_b['total_tokens']['total_tokens']} tokens\n\n"
-                    )
+                    a_config_name = f"{target_a_ver} (T={target_a_temp})"
+                    b_config_name = f"{target_b_ver} (T={target_b_temp})"
 
                     trace_a_str = "\n".join(
                         f"[{s['iteration']}] {s['thought']} -> {s['action']} (Input: {json.dumps(s.get('action_input', {}))}) -> {s.get('observation', '')[:120]}"
@@ -1588,12 +1547,45 @@ def build_ui() -> gr.Blocks:
                         for s in res_b.get("trace", [])
                     )
 
+                    saved_state = {
+                        "prompt": clean_prompt,
+                        "version_a": v_a,
+                        "temp_a": t_a,
+                        "version_b": v_b,
+                        "temp_b": t_b,
+                        "target_a_ver": target_a_ver,
+                        "target_a_temp": target_a_temp,
+                        "target_b_ver": target_b_ver,
+                        "target_b_temp": target_b_temp,
+                        "a_config": a_config_name,
+                        "b_config": b_config_name,
+                        "swapped": swapped,
+                        "answer_a": res_a.get("answer", ""),
+                        "answer_b": res_b.get("answer", ""),
+                        "latency_a": res_a.get("total_latency_ms", 0),
+                        "latency_b": res_b.get("total_latency_ms", 0),
+                        "tokens_a": res_a.get("total_tokens", {}).get("total_tokens", 0),
+                        "tokens_b": res_b.get("total_tokens", {}).get("total_tokens", 0),
+                        "trace_a_str": trace_a_str,
+                        "trace_b_str": trace_b_str,
+                        "provider": provider,
+                    }
+
+                    # Blind presentation: NEVER leak version name, temperature, latency, or tokens before vote!
+                    badge_a = "**Output A (Blinded)**\n\n"
+                    badge_b = "**Output B (Blinded)**\n\n"
+
+                    trace_hidden_placeholder = (
+                        "🔒 *Reasoning trace and performance metrics are hidden during blind evaluation to prevent operator bias. "
+                        "They will be revealed after you cast your vote below.*"
+                    )
+
                     return (
                         badge_a + res_a.get("answer", ""),
-                        trace_a_str,
+                        trace_hidden_placeholder,
                         badge_b + res_b.get("answer", ""),
-                        trace_b_str,
-                        "✅ Execution complete! Cast your vote below:",
+                        trace_hidden_placeholder,
+                        "⚖️ Blind comparison generated! Evaluate Output A vs Output B below and cast your vote:",
                         saved_state,
                     )
 
@@ -1606,17 +1598,58 @@ def build_ui() -> gr.Blocks:
                 def vote_action(choice: str, state: dict):
                     if not state or not state.get("prompt"):
                         return "⚠️ Please run an A/B comparison query before voting.", render_ab_summary_html()
+                    
+                    swapped = state.get("swapped", False)
+                    v_a = state["version_a"]
+                    v_b = state["version_b"]
+                    t_a = state["temp_a"]
+                    t_b = state["temp_b"]
+                    
+                    # Map vote back to true configuration
+                    if choice == "A":
+                        winner_config = state["a_config"]
+                        winning_version = state["target_a_ver"]
+                    elif choice == "B":
+                        winner_config = state["b_config"]
+                        winning_version = state["target_b_ver"]
+                    else:
+                        winner_config = "Tie (Both equally acceptable)"
+                        winning_version = "Tie"
+                    
                     log_ab_vote(
                         prompt=state["prompt"],
-                        version_a=state["version_a"],
-                        temp_a=state["temp_a"],
-                        version_b=state["version_b"],
-                        temp_b=state["temp_b"],
+                        version_a=v_a,
+                        temp_a=t_a,
+                        version_b=v_b,
+                        temp_b=t_b,
                         answer_a=state["answer_a"],
                         answer_b=state["answer_b"],
                         vote=choice,
+                        a_config=state["a_config"],
+                        b_config=state["b_config"],
+                        swapped=1 if swapped else 0,
+                        protocol="blind",
+                        tokens_a=state["tokens_a"],
+                        tokens_b=state["tokens_b"],
+                        latency_a_ms=state["latency_a"],
+                        latency_b_ms=state["latency_b"],
+                        trace_a=state["trace_a_str"],
+                        trace_b=state["trace_b_str"],
                     )
-                    return f"🎉 Vote recorded: **{choice}**", render_ab_summary_html()
+                    
+                    prov = state.get("provider", "Groq")
+                    reveal_info = (
+                        f"🎉 **Vote recorded: {choice}** (Winner: **{winning_version}**)\n\n"
+                        f"--- \n"
+                        f"### 🔓 Blind Protocol Reveal\n"
+                        f"* **Output A was**: `{state['a_config']}` — ⏱️ {state['latency_a']:.0f} ms | 🪙 {state['tokens_a']} tokens\n"
+                        f"* **Output B was**: `{state['b_config']}` — ⏱️ {state['latency_b']:.0f} ms | 🪙 {state['tokens_b']} tokens\n"
+                        f"* **Protocol**: Blind randomized mapping ({'swapped' if swapped else 'direct'} presentation) | Provider: {prov}\n\n"
+                        f"#### Reasoning Traces (Post-Vote):\n"
+                        f"**Output A Trace**:\n```\n{state['trace_a_str']}\n```\n\n"
+                        f"**Output B Trace**:\n```\n{state['trace_b_str']}\n```"
+                    )
+                    return reveal_info, render_ab_summary_html()
 
                 vote_a_btn.click(
                     fn=lambda s: vote_action("A", s),

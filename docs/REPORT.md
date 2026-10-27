@@ -98,7 +98,7 @@ $$\text{Thought} \longrightarrow \text{Action} \longrightarrow \text{Action Inpu
 4. **Observation**: The real output returned by the Python backend execution, injected back into the prompt for the subsequent turn.
 5. **Finish**: When sufficient information is gathered, the model calls `Action: finish` with its final synthesized response. The loop is strictly capped at 5 iterations to guarantee termination.
 
-### 2.2 Semantic RAG Knowledge Pipeline
+### 2.2 Lexical Bi-gram TF-IDF RAG Knowledge Pipeline
 For general store queries regarding shipping fees, return windows, warranty terms, and cancellation policies, the system employs a bi-gram TF-IDF vector retrieval engine implemented in `retriever.py`:
 * **Chunking**: The primary policy document (`data/policy.md`) and FAQ entries (`data/faq.md`) are divided into semantic chunks of ~200 words each.
 * **Vectorization**: A `TfidfVectorizer` utilizing unigram and bigram tokenization (`ngram_range=(1, 2)`) processes and indexes all chunks.

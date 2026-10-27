@@ -52,6 +52,11 @@ def score_answer(answer: str, tool_calls: list, case: dict, policy_facts: set) -
     required_ok = all(re.search(p, low, re.I | re.S) for p in case.get("required", []))
     forbidden_hit = any(re.search(p, low, re.I | re.S) for p in case.get("forbidden", []))
 
+    # Explicit check for "shipped on <order_date>" (e.g. conflating order placement date with shipping date)
+    order_date = case.get("order_date")
+    if order_date and re.search(rf"shipped\s+on\s+{re.escape(order_date)}", low, re.I):
+        forbidden_hit = True
+
     # Any duration/percentage the answer states about policy must exist in policy.md.
     unsupported = set()
     if case.get("policy_query"):
@@ -123,8 +128,9 @@ GROUND_TRUTH_CASES = {
         "data_dependent": True,
         "should_refuse": False,
         "db_facts": ["TRK1002US", "shipped"],
+        "order_date": "2026-09-20",
         "required": [r"ord1002", r"(shipped|ship)", r"trk1002"],
-        "forbidden": [r"delivered"],
+        "forbidden": [r"delivered", r"shipped\s+on\s+2026-09-20"],
         "note": "valid shipped order tracking lookup"
     },
     "Q02": {

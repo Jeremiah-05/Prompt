@@ -119,3 +119,24 @@ def test_regression_order_date_not_confused_with_shipping_date():
     good_reply_unrecorded = "Your order ORD1002 is shipped. Specific shipment date is not recorded in our database; order date: 2026-09-20."
     assert check_date_claim_error(good_reply_unrecorded, orders) == 0
 
+
+def test_scoring_forbidden_pattern_shipped_on_order_date():
+    """
+    Regression test: verify eval/scoring.py flags 'shipped on <order_date>' as hallucination for Q01.
+    """
+    from eval.scoring import score_answer, GROUND_TRUTH_CASES
+    q01 = GROUND_TRUTH_CASES["Q01"]
+    
+    # Model incorrectly claims order was shipped on 2026-09-20
+    bad_reply = "Your order ORD1002 was shipped on 2026-09-20. Tracking: TRK1002US."
+    res_bad = score_answer(bad_reply, ["get_order_status"], q01, set())
+    assert res_bad["hallucination"] == 1, "Must flag 'shipped on <order_date>' as hallucination"
+    assert res_bad["task_success"] == 0
+
+    # Model correctly gives status and tracking without claiming order_date as shipping date
+    good_reply = "Your order ORD1002 has shipped with tracking TRK1002US. Order date: 2026-09-20, shipped date: not recorded."
+    res_good = score_answer(good_reply, ["get_order_status"], q01, set())
+    assert res_good["hallucination"] == 0
+    assert res_good["task_success"] == 1
+
+

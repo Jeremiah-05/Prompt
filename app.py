@@ -112,7 +112,7 @@ VERSION_INTEL = {
     "V6 — RAG + ReAct": {
         "badge": "🎯 V6: Grounded RAG + ReAct",
         "color": "#10b981",
-        "desc": "Ground-truth evaluated architecture: Semantic TF-IDF document retrieval injects verified policy and FAQ chunks into the prompt alongside active ReAct tools.",
+        "desc": "Ground-truth evaluated architecture: lexical bi-gram TF-IDF document retrieval injects verified policy and FAQ chunks into the prompt alongside active ReAct tools.",
         "tags": ["🛡️ 0.0% Hallucination [0.0%–20.4%]", "🎯 100.0% Tool Acc [79.6%–100.0%]", "✅ Verified Grounding"],
     },
 }
@@ -572,13 +572,24 @@ def generate_eval_charts():
     if not rows:
         return None
     
+    import statistics
     from collections import defaultdict
     version_metrics = defaultdict(lambda: {
         "success": [], "tool_accuracy": [], "hallucination": [], "latency": []
     })
     
+    def normalize_version(v: str) -> str:
+        v = (v or "").strip()
+        if v.startswith("V1"): return "V1 — Naive"
+        if v.startswith("V2"): return "V2 — Role + Rules"
+        if v.startswith("V3"): return "V3 — Few-Shot"
+        if v.startswith("V4"): return "V4 — CoT"
+        if v.startswith("V5"): return "V5 — ReAct"
+        if v.startswith("V6"): return "V6 — RAG + ReAct"
+        return v
+    
     for row in rows:
-        v = row.get("version", "unknown")
+        v = normalize_version(row.get("version", "unknown"))
         try:
             version_metrics[v]["success"].append(float(row.get("task_success", 0)))
         except (ValueError, TypeError):
@@ -592,17 +603,27 @@ def generate_eval_charts():
         except (ValueError, TypeError):
             pass
         try:
-            version_metrics[v]["latency"].append(float(row.get("latency_ms", 0)))
+            lat_raw = float(row.get("latency_ms", 0))
+            retry_wait = float(row.get("retry_wait_ms", 0) or 0)
+            net_lat = max(0.0, lat_raw - retry_wait)
+            version_metrics[v]["latency"].append(net_lat)
         except (ValueError, TypeError):
             pass
     
-    versions = sorted(version_metrics.keys())
+    CANONICAL_VERSIONS = [
+        "V1 — Naive", "V2 — Role + Rules", "V3 — Few-Shot",
+        "V4 — CoT", "V5 — ReAct", "V6 — RAG + ReAct"
+    ]
+    versions = [v for v in CANONICAL_VERSIONS if v in version_metrics]
     avg = lambda lst: sum(lst) / len(lst) if lst else 0
     
     success_rates = [avg(version_metrics[v]["success"]) * 100 for v in versions]
     tool_acc = [avg(version_metrics[v]["tool_accuracy"]) * 100 for v in versions]
     halluc_rates = [avg(version_metrics[v]["hallucination"]) * 100 for v in versions]
-    latencies = [avg(version_metrics[v]["latency"]) for v in versions]
+    latencies = [
+        statistics.median(version_metrics[v]["latency"]) if version_metrics[v]["latency"] else 0
+        for v in versions
+    ]
     
     # Modern dark tech theme for charts
     plt.style.use('dark_background')
@@ -622,15 +643,20 @@ def generate_eval_charts():
     for i, v in enumerate(success_rates):
         ax1.text(i, v + 2, f"{v:.0f}%", ha="center", fontweight="bold", color="#ffffff")
     
-    # 2. Tool Accuracy
+    # 2. Tool Accuracy (V1/V2 shown as N/A, never 0%)
     ax2 = axes[0, 1]
     ax2.set_facecolor("#1e293b")
-    ax2.bar(versions, tool_acc, color=bar_colors, edgecolor="#334155")
+    plot_tool_acc = [0 if ("V1" in v or "V2" in v) else tool_acc[i] for i, v in enumerate(versions)]
+    ax2.bar(versions, plot_tool_acc, color=bar_colors, edgecolor="#334155")
     ax2.set_title("Tool Call Accuracy (%)", color="#a78bfa", fontweight="bold", pad=10)
     ax2.set_ylim(0, 115)
     ax2.grid(axis='y', alpha=0.15)
-    for i, v in enumerate(tool_acc):
-        ax2.text(i, v + 2, f"{v:.0f}%", ha="center", fontweight="bold", color="#ffffff")
+    for i, v in enumerate(versions):
+        if "V1" in v or "V2" in v:
+            ax2.text(i, 3, "N/A", ha="center", fontweight="bold", color="#94a3b8")
+        else:
+            val = tool_acc[i]
+            ax2.text(i, val + 2, f"{val:.0f}%", ha="center", fontweight="bold", color="#ffffff")
     
     # 3. Hallucination Rate (Lower is Better)
     ax3 = axes[1, 0]
@@ -643,11 +669,11 @@ def generate_eval_charts():
     for i, v in enumerate(halluc_rates):
         ax3.text(i, v + 1, f"{v:.0f}%", ha="center", fontweight="bold", color="#ffffff")
     
-    # 4. Latency
+    # 4. Latency (Median latency excluding rate-limit backoff)
     ax4 = axes[1, 1]
     ax4.set_facecolor("#1e293b")
     ax4.bar(versions, latencies, color=bar_colors, edgecolor="#334155")
-    ax4.set_title("Average Latency (ms)", color="#34d399", fontweight="bold", pad=10)
+    ax4.set_title("Median Latency (ms, excl. backoff)", color="#34d399", fontweight="bold", pad=10)
     ax4.grid(axis='y', alpha=0.15)
     for i, v in enumerate(latencies):
         ax4.text(i, v + 15, f"{v:.0f}ms", ha="center", fontweight="bold", color="#ffffff")
@@ -658,7 +684,7 @@ def generate_eval_charts():
         for spine in ax.spines.values():
             spine.set_color("#334155")
     
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.94])
     chart_path = EVAL_DIR / "eval_charts.png"
     fig.savefig(chart_path, dpi=160, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
@@ -1311,7 +1337,7 @@ def build_ui() -> gr.Blocks:
                 
                 with gr.Row():
                     bench_version_selector = gr.Dropdown(
-                        choices=["V6 — RAG + ReAct", "V5 — ReAct", "V4 — Chain-of-Thought", "V3 — Few-Shot", "V2 — Role + Rules", "V1 — Naive", "All Versions (V1–V6)"],
+                        choices=["V6 — RAG + ReAct", "V5 — ReAct", "V4 — CoT", "V3 — Few-Shot", "V2 — Role + Rules", "V1 — Naive", "All Versions (V1–V6)"],
                         value="V6 — RAG + ReAct",
                         label="Target Prompt Version",
                         scale=2,

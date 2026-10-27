@@ -8,8 +8,9 @@
     "data_dependent": true,
     "should_refuse": false,
     "db_facts": ["TRK1002US", "shipped"],
+    "order_date": "2026-09-20",
     "required": ["ord1002", "(shipped|ship)", "trk1002"],
-    "forbidden": ["delivered"],
+    "forbidden": ["delivered", "shipped\\s+on\\s+2026-09-20"],
     "note": "valid shipped order tracking lookup"
   },
   {

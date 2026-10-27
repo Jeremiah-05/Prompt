@@ -14,6 +14,7 @@ PROMPT_VERSIONS = {
     "V2 — Role + Rules": "v2.md",
     "V3 — Few-Shot": "v3.md",
     "V4 — CoT": "v4.md",
+    "V4 — Chain-of-Thought": "v4.md",
     "V5 — ReAct": "v5.md",
     "V6 — RAG + ReAct": "v6.md",
 }
@@ -24,6 +25,7 @@ LEGACY_PROMPT_VERSIONS = {
     "V2 — Role + Rules": "v2_role_rules.md",
     "V3 — Few-Shot": "v3_fewshot.md",
     "V4 — CoT": "v4_cot.md",
+    "V4 — Chain-of-Thought": "v4_cot.md",
     "V5 — ReAct": "v5_react.md",
     "V6 — RAG + ReAct": "v6_rag_react.md",
 }
@@ -34,6 +36,7 @@ RECOMMENDED_TEMPS = {
     "V2 — Role + Rules": 0.5,
     "V3 — Few-Shot": 0.3,
     "V4 — CoT": 0.3,
+    "V4 — Chain-of-Thought": 0.3,
     "V5 — ReAct": 0.3,
     "V6 — RAG + ReAct": 0.3,
 }

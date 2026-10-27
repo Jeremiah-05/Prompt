@@ -75,7 +75,7 @@ class TestGetOrderStatus:
         result = get_order_status("ORD1002", customer_name="Bob Stevens")
         assert result["status"] == "shipped"
         assert result["order_date"] == "2026-09-20"
-        assert result["shipping_date"] is None
+        assert result["shipped_date"] == "not recorded"
         assert result["delivery_date"] is None
         assert result["tracking_id"] == "TRK1002US"
 
@@ -430,6 +430,63 @@ class TestSecurityHardening:
             user_message="Yes, please place the order, I confirm.",
         )
         assert allowed is True
+
+
+class TestMultiTurnConversation:
+    """Tests for multi-turn conversational context preservation in the ReAct loop."""
+
+    def test_name_followup_preserves_order_id_in_prompt(self):
+        """Verify that replying with only a customer name retains the order ID from chat history."""
+        from prompts.builder import build_prompt
+        chat_hist = [
+            {"role": "user", "content": "Where is my order ORD1002?"},
+            {"role": "assistant", "content": "Please verify your full name on the order."}
+        ]
+        user_msg = "Bob Stevens"
+        prompt = build_prompt(
+            version="V6 — RAG + ReAct",
+            user_message=user_msg,
+            chat_history=chat_hist,
+        )
+        assert "ORD1002" in prompt, "Order ID from previous turn must be present in prompt"
+        assert "Bob Stevens" in prompt, "Customer name from current turn must be present in prompt"
+        assert "User: Where is my order ORD1002?" in prompt
+        assert "Assistant: Please verify your full name on the order." in prompt
+        assert "USER MESSAGE:\nBob Stevens" in prompt
+
+    def test_two_turn_react_execution(self):
+        """Two-turn end-to-end test: Turn 1 asks for name, Turn 2 completes order lookup."""
+        import os
+        from app import run_react_loop
+        if not os.getenv("GROQ_API_KEY") or os.getenv("GROQ_API_KEY") == "your_groq_api_key_here":
+            pytest.skip("GROQ_API_KEY not configured for live test")
+
+        # Turn 1: User asks without name -> returns verification challenge
+        res1 = run_react_loop(
+            user_message="Where is my order ORD1002?",
+            chat_history=[],
+            version="V6 — RAG + ReAct",
+            provider="groq"
+        )
+        ans1_low = res1["answer"].lower()
+        assert "name" in ans1_low or "verify" in ans1_low or "verification" in ans1_low
+
+        # Turn 2: User responds with only name -> ReAct loop uses history and accesses ORD1002
+        res2 = run_react_loop(
+            user_message="Bob Stevens",
+            chat_history=[
+                {"role": "user", "content": "Where is my order ORD1002?"},
+                {"role": "assistant", "content": res1["answer"]}
+            ],
+            version="V6 — RAG + ReAct",
+            provider="groq"
+        )
+        actions = [s.get("action") for s in res2.get("trace", [])]
+        assert "get_order_status" in actions, "Must call get_order_status on turn 2"
+        status_step = next(s for s in res2["trace"] if s.get("action") == "get_order_status")
+        assert status_step["action_input"]["order_id"] == "ORD1002"
+        assert "Bob Stevens" in status_step["action_input"]["customer_name"]
+        assert "TRK1002US" in res2["answer"]
 
 
 class TestLiveDatabaseIsolation:

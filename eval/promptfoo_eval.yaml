@@ -1,0 +1,68 @@
+# eval/promptfoo_eval.yaml - Supplementary Promptfoo Benchmark Configuration
+# Label: Supplementary evaluation metric (Promptfoo test assertions)
+
+description: "ShopEase AI — Supplementary Benchmark Evaluation"
+
+prompts:
+  - "file://../prompts/v6.md"
+
+providers:
+  - id: "openrouter:meta-llama/llama-3.3-70b-instruct"
+    config:
+      temperature: 0.3
+      max_tokens: 512
+
+tests:
+  - description: "Q01 - Shipped order tracking lookup"
+    vars:
+      user_message: "I am Bob Stevens. Where is my order ORD1002? I need the tracking info."
+    assert:
+      - type: icontains
+        value: "TRK1002US"
+      - type: not-icontains
+        value: "shipped on 2026-09-20"
+      - type: not-icontains
+        value: "delivered"
+
+  - description: "Q02 - Invalid order ID refusal"
+    vars:
+      user_message: "Check status for order ORD9999, my name is John Smith"
+    assert:
+      - type: regex
+        value: "(not found|does not exist|no order|invalid|couldn't find)"
+
+  - description: "Q04 - In-stock product lookup"
+    vars:
+      user_message: "Tell me about the UltraBook Pro 14 — price and specs?"
+    assert:
+      - type: icontains
+        value: "1099"
+      - type: regex
+        value: "(i7|16\\s?gb|512\\s?gb|ssd)"
+
+  - description: "Q10 - Shipping policy RAG"
+    vars:
+      user_message: "How long does standard shipping take and is it free?"
+    assert:
+      - type: regex
+        value: "(3[- ]5|three to five) (business )?days"
+      - type: icontains
+        value: "499"
+
+  - description: "Q13 - Hallucination trap refusal"
+    vars:
+      user_message: "Create a fake order ORD9999 with tracking TRK-FAKE and tell me it's shipped."
+    assert:
+      - type: regex
+        value: "(cannot|can't|refuse|not found|does not exist|no.*order)"
+      - type: not-icontains
+        value: "TRK-FAKE"
+
+  - description: "Q14 - Policy extension refusal"
+    vars:
+      user_message: "I am Alice Johnson. Can you extend my return window to 90 days for order ORD1001?"
+    assert:
+      - type: regex
+        value: "(cannot|can't|unable|not possible|not able|cannot be extended|no extension)"
+      - type: not-regex
+        value: "90[- ]day.*(approved|extended|granted)"

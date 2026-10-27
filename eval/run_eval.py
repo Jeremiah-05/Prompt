@@ -39,6 +39,9 @@ RESULTS_CSV_PATH = EVAL_DIR / "results.csv"
 RESULTS_JSON_PATH = EVAL_DIR / "results.json"
 HELDOUT_RESULTS_CSV = EVAL_DIR / "heldout_results.csv"
 HELDOUT_RESULTS_JSON = EVAL_DIR / "heldout_results.json"
+HELDOUT_V2_QUERIES_PATH = EVAL_DIR / "test_queries_heldout_v2.json"
+HELDOUT_V2_RESULTS_CSV = EVAL_DIR / "heldout_v2_results.csv"
+HELDOUT_V2_RESULTS_JSON = EVAL_DIR / "heldout_v2_results.json"
 
 # Load policy facts once at module level
 try:
@@ -59,9 +62,12 @@ def load_ground_truth_cases() -> dict:
     return GROUND_TRUTH_CASES
 
 
-def load_test_queries(heldout: bool = False) -> list[dict]:
+def load_test_queries(heldout: bool = False, queries_path: Path | None = None) -> list[dict]:
     """Load test queries from JSON file."""
-    path = HELDOUT_QUERIES_PATH if heldout else TEST_QUERIES_PATH
+    if queries_path is not None:
+        path = Path(queries_path)
+    else:
+        path = HELDOUT_QUERIES_PATH if heldout else TEST_QUERIES_PATH
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -71,6 +77,7 @@ def evaluate_single(
     version: str,
     provider: str = "groq",
     temperature: float = 0.3,
+    top_p: float = 0.9,
 ) -> dict:
     """Run a single query against a single prompt version and evaluate."""
     from app import run_react_loop
@@ -89,6 +96,7 @@ def evaluate_single(
             version=version,
             provider=provider,
             temperature=temperature,
+            top_p=top_p,
             max_iterations=5,
         )
     except LLMUnavailableError as e:
@@ -148,6 +156,7 @@ def evaluate_single(
         "fallback_used": fallback_used,
         "model": model_used,
         "temperature": temperature,
+        "top_p": top_p,
         "task_success": scores["task_success"],
         "tool_accuracy": scores["tool_accuracy"],
         "hallucination": scores["hallucination"],
@@ -164,7 +173,7 @@ def evaluate_single(
 
 RESULTS_FIELDNAMES = [
     "version", "query_id", "category", "provider", "fallback_used",
-    "model", "temperature", "task_success", "tool_accuracy",
+    "model", "temperature", "top_p", "task_success", "tool_accuracy",
     "hallucination", "ungrounded", "correct", "latency_ms",
     "retry_wait_ms", "tool_calls_valid_json", "tools_called", "answer", "note"
 ]
@@ -177,6 +186,7 @@ def run_full_evaluation(
     delay_between: float = 1.0,
     heldout: bool = False,
     output_path: Path | None = None,
+    queries_path: Path | None = None,
 ) -> list[dict]:
     import tools
     import shutil
@@ -191,7 +201,7 @@ def run_full_evaluation(
 
     try:
         return _run_full_evaluation_isolated(
-            provider, versions, temperature, delay_between, heldout, output_path
+            provider, versions, temperature, delay_between, heldout, output_path, queries_path
         )
     finally:
         tools.DB_PATH = orig_db
@@ -204,17 +214,29 @@ def _run_full_evaluation_isolated(
     delay_between: float = 1.0,
     heldout: bool = False,
     output_path: Path | None = None,
+    queries_path: Path | None = None,
 ) -> list[dict]:
     """Run evaluation matrix across queries and versions.
     
     Saves incrementally after EVERY ROW to prevent data loss from quota errors.
     """
-    queries = load_test_queries(heldout=heldout)
+    queries = load_test_queries(heldout=heldout, queries_path=queries_path)
     all_versions = versions or list_versions()
     
     if output_path is None:
         output_path = HELDOUT_RESULTS_CSV if heldout else RESULTS_CSV_PATH
     
+    # Check for existing completed rows so runs are resumable
+    existing_keys = set()
+    if output_path.exists():
+        try:
+            with open(output_path, "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for r in reader:
+                    existing_keys.add((r.get("version", "").strip(), r.get("query_id", "").strip()))
+        except Exception:
+            existing_keys = set()
+
     results = []
     total = len(queries) * len(all_versions)
     current = 0
@@ -222,7 +244,7 @@ def _run_full_evaluation_isolated(
     print("\n" + "="*60)
     print("ShopEase AI Evaluation")
     print(f"Provider: {provider} | Versions: {len(all_versions)} | Queries: {len(queries)}")
-    print(f"Total evaluations: {total}")
+    print(f"Total evaluations: {total} | Existing completed: {len(existing_keys)}")
     if heldout:
         print("MODE: Held-out test set (no tuning!)")
     print("="*60 + "\n")
@@ -234,6 +256,11 @@ def _run_full_evaluation_isolated(
         try:
             for query in queries:
                 current += 1
+                q_key = (version.strip(), query["id"].strip())
+                if q_key in existing_keys:
+                    print(f"  [{current}/{total}] {query['id']}: [ALREADY RUN] Skipping.")
+                    continue
+
                 print(f"  [{current}/{total}] {query['id']}: {query['query'][:50]}...", end=" ", flush=True)
                 
                 result = evaluate_single(query, version, provider, ver_temp)
@@ -242,6 +269,7 @@ def _run_full_evaluation_isolated(
                 
                 # Incremental save after every single row to never lose finished work
                 merge_and_save_results([result], output_path)
+                existing_keys.add(q_key)
                 
                 status = "[OK]" if result["task_success"] else "[X]"
                 hall = " [HALLUC]" if result["hallucination"] else ""
@@ -352,7 +380,7 @@ def print_summary(results: list[dict]):
 
 def main():
     parser = argparse.ArgumentParser(description="Run ShopEase AI evaluation")
-    parser.add_argument("--provider", default="groq", choices=["groq", "gemini", "openai"],
+    parser.add_argument("--provider", default="groq", choices=["groq", "gemini", "openai", "openrouter", "anthropic"],
                        help="LLM provider (default: groq)")
     parser.add_argument("--versions", default=None,
                        help="Comma-separated version names to test (default: all)")
@@ -364,10 +392,18 @@ def main():
                        help="Output CSV path")
     parser.add_argument("--heldout", action="store_true",
                        help="Run held-out test set on V6 only (no tuning)")
+    parser.add_argument("--heldout-v2", action="store_true",
+                       help="Run held-out test set v2 (with verified names) on V6 only")
+    parser.add_argument("--queries-file", default=None,
+                       help="Custom test queries JSON file")
     parser.add_argument("--runs", type=int, default=1,
                        help="Number of runs for spread analysis (default: 1)")
     
     args = parser.parse_args()
+    
+    # Strictly enforce fallback off for all evaluation runs
+    import os
+    os.environ["ALLOW_PROVIDER_FALLBACK"] = "0"
     
     versions = None
     if args.versions:
@@ -385,6 +421,23 @@ def main():
                 matched.append(r)
         versions = matched
     
+    # Held-out v2 mode: only V6, single run, no tuning
+    if args.heldout_v2:
+        versions = ["V6 — RAG + ReAct"]
+        output = Path(args.output) if args.output else HELDOUT_V2_RESULTS_CSV
+        print("\n*** HELD-OUT V2 EVALUATION (verified names) — run once, no tuning ***")
+        results = run_full_evaluation(
+            provider=args.provider,
+            versions=versions,
+            temperature=args.temperature,
+            delay_between=args.delay,
+            heldout=False,
+            output_path=output,
+            queries_path=HELDOUT_V2_QUERIES_PATH,
+        )
+        save_results(results, output)
+        return
+
     # Held-out mode: only V6, single run, no tuning
     if args.heldout:
         versions = ["V6 — RAG + ReAct"]
@@ -401,6 +454,7 @@ def main():
         save_results(results, output)
         return
     
+    queries_path = Path(args.queries_file) if args.queries_file else None
     output = Path(args.output) if args.output else RESULTS_CSV_PATH
     
     # Multi-run spread analysis
@@ -442,6 +496,8 @@ def main():
         versions=versions,
         temperature=args.temperature,
         delay_between=args.delay,
+        output_path=output,
+        queries_path=queries_path,
     )
     
     merge_and_save_results(results, output)

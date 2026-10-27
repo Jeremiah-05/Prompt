@@ -102,7 +102,9 @@ def _call_groq(
             if "tpd" in err_msg or "tokens per day" in err_msg or "credit" in err_msg:
                 raise
             if ("429" in err_msg or "rate limit" in err_msg or "timed out" in err_msg or "timeout" in err_msg or "connection" in err_msg) and attempt < max_retries - 1:
-                wait_sec = (attempt + 1) * 4
+                import re, math
+                m_delay = re.search(r"try again in (\d+(?:\.\d+)?)s", err_msg)
+                wait_sec = math.ceil(float(m_delay.group(1))) + 1 if m_delay else (attempt + 1) * 5
                 total_retry_wait_ms += wait_sec * 1000
                 print(f"\n[Groq retry] {type(e).__name__}: {str(e)[:80]}. Backing off for {wait_sec}s (retry {attempt+1}/{max_retries-1})...")
                 time.sleep(wait_sec)

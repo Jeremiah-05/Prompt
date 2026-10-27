@@ -2,19 +2,18 @@
 
 **Project**: ShopEase AI — Intelligent Customer Service Bot (Gradio 6.x, ReAct + RAG, V1–V6)  
 **Execution Timestamp**: October 2026  
-**Environment**: Windows, Python 3.12.10, Pytest 9.1.1, SQLite 3  
-**Overall Status**: ✅ **ALL CHECKS & TESTS PASSED (75/75 Unit Tests Passing, Database & Benchmarks Synchronized)**
+**Environment**: Windows, Python 3.12.10, Pytest 9.1.1, SQ**Overall Status**: ✅ **ALL CHECKS & TESTS PASSED (78/78 Unit Tests Passing, Database & Benchmarks Synchronized)**
 
 ---
 
 ## 1. Executive Summary
 
-A full end-to-end verification and diagnostic scan of the entire **ShopEase AI** codebase was conducted using both the formal pytest test suite (`eval/test_cases.py`, `eval/test_react.py`, `eval/test_security.py`, `test_llm_fallback.py`) and dedicated diagnostic scripts. All 75 test cases passed without failures. The live SQLite database (`data/shopease.db`) was verified to be strictly isolated during test runs via `eval/conftest.py` with 21 orders and 15 products. All benchmark tables across `README.md`, `docs/REPORT.md`, `docs/PRESENTATION_OUTLINE.md`, and `prompts/evaluation_log.md` match `eval/results.csv`, `eval/param_results.csv`, `eval/bias_results.csv`, and `eval/heldout_results.csv` generated via `eval/render_readme_tables.py`. In accordance with strict evaluation rules, `scripts/cast_ab_votes.py` was permanently deleted; `ab_log` records zero programmatic votes, correctly reporting `"no votes recorded yet"` until votes are cast interactively in the A/B tab.
+A full end-to-end verification and diagnostic scan of the entire **ShopEase AI** codebase was conducted using both the formal pytest test suite (`eval/test_cases.py`, `eval/test_react.py`, `eval/test_security.py`, `test_llm_fallback.py`) and dedicated diagnostic scripts. All 78 test cases passed without failures. The live SQLite database (`data/shopease.db`) was verified to be strictly isolated during test runs via `eval/conftest.py` with 21 orders and 15 products. All benchmark tables across `README.md`, `docs/REPORT.md`, `docs/PRESENTATION_OUTLINE.md`, and `prompts/evaluation_log.md` match `eval/results.csv`, `eval/param_results.csv`, `eval/bias_results.csv`, `eval/heldout_results.csv`, and `eval/heldout_v2_results.csv` generated via `eval/render_readme_tables.py`. In accordance with strict evaluation rules, `scripts/cast_ab_votes.py` was permanently deleted; `ab_log` records zero programmatic votes, correctly reporting `"no votes recorded yet"` until votes are cast interactively in the A/B tab.
 
 | Subsystem / Test Suite | Scope | Status | Notes |
 |:---|:---:|:---:|:---|
-| **`eval/test_cases.py`** | Ground-Truth Audit & Date Regression | **5/5 PASSED** | Required regex matches SQLite data; date claim regression verifies order_date is not confused with shipping_date. |
-| **`eval/test_react.py`** | Tools, RAG, Parser, Dates & Auth | **48/48 PASSED** | Full coverage of ReAct execution, ownership verification, live DB isolation test, ACID concurrency, and explicit shipping_date distinction. |
+| **`eval/test_cases.py`** | Ground-Truth Audit & Date Regression | **6/6 PASSED** | Required regex matches SQLite data; date claim regression verifies order_date is not confused with shipping_date; scoring regex forbids 'shipped on <order_date>'. |
+| **`eval/test_react.py`** | Tools, RAG, Parser, Dates, Auth & Multi-Turn | **50/50 PASSED** | Full coverage of ReAct execution, ownership verification, live DB isolation test, ACID concurrency, multi-turn history order preservation, and explicit shipping_date distinction. |
 | **`eval/test_security.py`** | Security & Privacy | **14/14 PASSED** | Length cap (1k), rate limiter (15 req/min), PII redaction (13–19 digit cards), transactional confirmation. |
 | **`test_llm_fallback.py`** | Multi-Provider Fallback & Error Classification | **8/8 PASSED** | Verifies primary provider usage, real provider fallback, error classification, key omission skipping, and strict no-simulated-output guarantee. |
 | **Database Isolation** | `eval/conftest.py` | **VERIFIED** | Tests run on temporary DB copy; live DB order count remains unchanged at 21. |
@@ -37,85 +36,89 @@ platform win32 -- Python 3.12.10, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\JEREMIA
 cachedir: .pytest_cache
 rootdir: E:\New folder
 plugins: anyio-4.14.2, platformdirs-4.12.4
-collecting ... collected 75 items
+collecting ... collected 78 items
 
 eval/test_cases.py::test_data_dependent_cases_have_db_facts PASSED       [  1%]
 eval/test_cases.py::test_data_dependent_cases_require_db_facts PASSED    [  2%]
-eval/test_cases.py::test_db_facts_exist_in_database PASSED               [  4%]
+eval/test_cases.py::test_db_facts_exist_in_database PASSED               [  3%]
 eval/test_cases.py::test_failing_case_without_db_facts PASSED            [  5%]
 eval/test_cases.py::test_regression_order_date_not_confused_with_shipping_date PASSED [  6%]
+eval/test_cases.py::test_scoring_forbidden_pattern_shipped_on_order_date PASSED [  7%]
 eval/test_react.py::TestGetOrderStatus::test_valid_order PASSED          [  8%]
-eval/test_react.py::TestGetOrderStatus::test_invalid_order PASSED        [  9%]
-eval/test_react.py::TestGetOrderStatus::test_order_without_prefix PASSED [ 10%]
+eval/test_react.py::TestGetOrderStatus::test_invalid_order PASSED        [ 10%]
+eval/test_react.py::TestGetOrderStatus::test_order_without_prefix PASSED [ 11%]
 eval/test_react.py::TestGetOrderStatus::test_shipped_order PASSED        [ 12%]
-eval/test_react.py::TestGetOrderStatus::test_processing_order PASSED     [ 13%]
-eval/test_react.py::TestGetOrderStatus::test_shipped_order_dates_distinction PASSED [ 14%]
-eval/test_react.py::TestGetProductInfo::test_by_product_id PASSED        [ 13%]
-eval/test_react.py::TestGetProductInfo::test_by_name PASSED              [ 15%]
-eval/test_react.py::TestGetProductInfo::test_by_partial_name PASSED      [ 16%]
-eval/test_react.py::TestGetProductInfo::test_out_of_stock PASSED         [ 17%]
-eval/test_react.py::TestGetProductInfo::test_not_found PASSED            [ 19%]
-eval/test_react.py::TestInitiateReturn::test_eligible_general_return PASSED [ 20%]
-eval/test_react.py::TestInitiateReturn::test_non_delivered_order PASSED  [ 21%]
-eval/test_react.py::TestInitiateReturn::test_shipped_order_return PASSED [ 23%]
-eval/test_react.py::TestInitiateReturn::test_product_not_in_order PASSED [ 24%]
-eval/test_react.py::TestInitiateReturn::test_food_item_non_returnable PASSED [ 26%]
-eval/test_react.py::TestCalculateRefund::test_valid_refund PASSED        [ 27%]
-eval/test_react.py::TestCalculateRefund::test_invalid_order PASSED       [ 28%]
-eval/test_react.py::TestCalculateRefund::test_product_not_in_order PASSED [ 30%]
-eval/test_react.py::TestAuthorizationAndConcurrency::test_missing_name_refused PASSED [ 31%]
-eval/test_react.py::TestAuthorizationAndConcurrency::test_non_owner_refused PASSED [ 32%]
-eval/test_react.py::TestAuthorizationAndConcurrency::test_owner_succeeds PASSED [ 34%]
-eval/test_react.py::TestAuthorizationAndConcurrency::test_cancel_by_non_owner_refused PASSED [ 35%]
-eval/test_react.py::TestAuthorizationAndConcurrency::test_modify_by_non_owner_refused PASSED [ 36%]
-eval/test_react.py::TestAuthorizationAndConcurrency::test_return_by_non_owner_refused PASSED [ 38%]
-eval/test_react.py::TestAuthorizationAndConcurrency::test_refund_by_non_owner_refused PASSED [ 39%]
-eval/test_react.py::TestAuthorizationAndConcurrency::test_concurrent_place_order_cannot_oversell PASSED [ 41%]
-eval/test_react.py::TestExecuteTool::test_execute_known_tool PASSED      [ 42%]
-eval/test_react.py::TestExecuteTool::test_execute_unknown_tool PASSED    [ 43%]
-eval/test_react.py::TestExecuteTool::test_execute_finish PASSED          [ 45%]
-eval/test_react.py::TestExecuteTool::test_execute_with_bad_args PASSED   [ 46%]
-eval/test_react.py::TestRetriever::test_shipping_policy_retrieval PASSED [ 47%]
-eval/test_react.py::TestRetriever::test_return_policy_retrieval PASSED   [ 49%]
-eval/test_react.py::TestRetriever::test_warranty_retrieval PASSED        [ 50%]
+eval/test_react.py::TestGetOrderStatus::test_processing_order PASSED     [ 14%]
+eval/test_react.py::TestGetOrderStatus::test_shipped_order_dates_distinction PASSED [ 15%]
+eval/test_react.py::TestGetProductInfo::test_by_product_id PASSED        [ 16%]
+eval/test_react.py::TestGetProductInfo::test_by_name PASSED              [ 17%]
+eval/test_react.py::TestGetProductInfo::test_by_partial_name PASSED      [ 19%]
+eval/test_react.py::TestGetProductInfo::test_out_of_stock PASSED         [ 20%]
+eval/test_react.py::TestGetProductInfo::test_not_found PASSED            [ 21%]
+eval/test_react.py::TestInitiateReturn::test_eligible_general_return PASSED [ 23%]
+eval/test_react.py::TestInitiateReturn::test_non_delivered_order PASSED  [ 24%]
+eval/test_react.py::TestInitiateReturn::test_shipped_order_return PASSED [ 25%]
+eval/test_react.py::TestInitiateReturn::test_product_not_in_order PASSED [ 26%]
+eval/test_react.py::TestInitiateReturn::test_food_item_non_returnable PASSED [ 28%]
+eval/test_react.py::TestCalculateRefund::test_valid_refund PASSED        [ 29%]
+eval/test_react.py::TestCalculateRefund::test_invalid_order PASSED       [ 30%]
+eval/test_react.py::TestCalculateRefund::test_product_not_in_order PASSED [ 32%]
+eval/test_react.py::TestAuthorizationAndConcurrency::test_missing_name_refused PASSED [ 33%]
+eval/test_react.py::TestAuthorizationAndConcurrency::test_non_owner_refused PASSED [ 34%]
+eval/test_react.py::TestAuthorizationAndConcurrency::test_owner_succeeds PASSED [ 35%]
+eval/test_react.py::TestAuthorizationAndConcurrency::test_cancel_by_non_owner_refused PASSED [ 37%]
+eval/test_react.py::TestAuthorizationAndConcurrency::test_modify_by_non_owner_refused PASSED [ 38%]
+eval/test_react.py::TestAuthorizationAndConcurrency::test_return_by_non_owner_refused PASSED [ 39%]
+eval/test_react.py::TestAuthorizationAndConcurrency::test_refund_by_non_owner_refused PASSED [ 41%]
+eval/test_react.py::TestAuthorizationAndConcurrency::test_concurrent_place_order_cannot_oversell PASSED [ 42%]
+eval/test_react.py::TestExecuteTool::test_execute_known_tool PASSED      [ 43%]
+eval/test_react.py::TestExecuteTool::test_execute_unknown_tool PASSED    [ 44%]
+eval/test_react.py::TestExecuteTool::test_execute_finish PASSED          [ 46%]
+eval/test_react.py::TestExecuteTool::test_execute_with_bad_args PASSED   [ 47%]
+eval/test_react.py::TestRetriever::test_shipping_policy_retrieval PASSED [ 48%]
+eval/test_react.py::TestRetriever::test_return_policy_retrieval PASSED   [ 50%]
+eval/test_react.py::TestRetriever::test_warranty_retrieval PASSED        [ 51%]
 eval/test_react.py::TestRetriever::test_relevance_scoring PASSED         [ 52%]
 eval/test_react.py::TestRetriever::test_empty_query PASSED               [ 53%]
-eval/test_react.py::TestParseReactOutput::test_standard_format PASSED    [ 54%]
+eval/test_react.py::TestParseReactOutput::test_standard_format PASSED    [ 55%]
 eval/test_react.py::TestParseReactOutput::test_finish_action PASSED      [ 56%]
 eval/test_react.py::TestParseReactOutput::test_multiline_thought PASSED  [ 57%]
 eval/test_react.py::TestParseReactOutput::test_no_valid_action PASSED    [ 58%]
 eval/test_react.py::TestCasesGroundTruthAudit::test_data_dependent_cases_have_db_facts PASSED [ 60%]
 eval/test_react.py::TestCasesGroundTruthAudit::test_data_dependent_cases_require_db_facts PASSED [ 61%]
-eval/test_react.py::TestCasesGroundTruthAudit::test_db_facts_verified_in_sqlite PASSED [ 63%]
+eval/test_react.py::TestCasesGroundTruthAudit::test_db_facts_verified_in_sqlite PASSED [ 62%]
 eval/test_react.py::TestSecurityHardening::test_input_length_capping PASSED [ 64%]
 eval/test_react.py::TestSecurityHardening::test_per_session_rate_limiter PASSED [ 65%]
-eval/test_react.py::TestSecurityHardening::test_pii_redaction_before_llm PASSED [ 67%]
-eval/test_react.py::TestSecurityHardening::test_transactional_confirmation_guard PASSED [ 68%]
-eval/test_react.py::TestLiveDatabaseIsolation::test_live_db_order_count_matches_seed_file PASSED [ 69%]
-eval/test_security.py::TestInputLengthCap::test_valid_length PASSED      [ 71%]
-eval/test_security.py::TestInputLengthCap::test_exceeded_length PASSED   [ 72%]
-eval/test_security.py::TestRateLimiter::test_within_rate_limit PASSED    [ 73%]
-eval/test_security.py::TestRateLimiter::test_exceed_rate_limit PASSED    [ 75%]
-eval/test_security.py::TestRateLimiter::test_independent_sessions PASSED [ 76%]
-eval/test_security.py::TestPIIRedaction::test_email_redaction PASSED     [ 78%]
-eval/test_security.py::TestPIIRedaction::test_phone_redaction PASSED     [ 79%]
-eval/test_security.py::TestPIIRedaction::test_card_redaction PASSED      [ 80%]
-eval/test_security.py::TestPIIRedaction::test_no_pii_unchanged PASSED    [ 82%]
-eval/test_security.py::TestTransactionalConfirmation::test_readonly_tool_no_confirmation_needed PASSED [ 83%]
-eval/test_security.py::TestTransactionalConfirmation::test_cancel_order_requires_confirmation_when_not_confirmed PASSED [ 84%]
-eval/test_security.py::TestTransactionalConfirmation::test_cancel_order_allowed_when_explicitly_confirmed PASSED [ 86%]
-eval/test_security.py::TestTransactionalConfirmation::test_place_order_requires_confirmation_without_keyword PASSED [ 87%]
+eval/test_react.py::TestSecurityHardening::test_pii_redaction_before_llm PASSED [ 66%]
+eval/test_react.py::TestSecurityHardening::test_transactional_confirmation_guard PASSED [ 67%]
+eval/test_react.py::TestMultiTurnConversation::test_name_followup_preserves_order_id_in_prompt PASSED [ 69%]
+eval/test_react.py::TestMultiTurnConversation::test_two_turn_react_execution PASSED [ 70%]
+eval/test_react.py::TestLiveDatabaseIsolation::test_live_db_order_count_matches_seed_file PASSED [ 71%]
+eval/test_security.py::TestInputLengthCap::test_valid_length PASSED      [ 73%]
+eval/test_security.py::TestInputLengthCap::test_exceeded_length PASSED   [ 74%]
+eval/test_security.py::TestRateLimiter::test_within_rate_limit PASSED    [ 75%]
+eval/test_security.py::TestRateLimiter::test_exceed_rate_limit PASSED    [ 76%]
+eval/test_security.py::TestRateLimiter::test_independent_sessions PASSED [ 78%]
+eval/test_security.py::TestPIIRedaction::test_email_redaction PASSED     [ 79%]
+eval/test_security.py::TestPIIRedaction::test_phone_redaction PASSED     [ 80%]
+eval/test_security.py::TestPIIRedaction::test_card_redaction PASSED      [ 82%]
+eval/test_security.py::TestPIIRedaction::test_no_pii_unchanged PASSED    [ 83%]
+eval/test_security.py::TestTransactionalConfirmation::test_readonly_tool_no_confirmation_needed PASSED [ 84%]
+eval/test_security.py::TestTransactionalConfirmation::test_cancel_order_requires_confirmation_when_not_confirmed PASSED [ 85%]
+eval/test_security.py::TestTransactionalConfirmation::test_cancel_order_allowed_when_explicitly_confirmed PASSED [ 87%]
+eval/test_security.py::TestTransactionalConfirmation::test_place_order_requires_confirmation_without_keyword PASSED [ 88%]
 eval/test_security.py::TestTransactionalConfirmation::test_place_order_allowed_with_confirm_keyword PASSED [ 89%]
-test_llm_fallback.py::test_primary_used_when_healthy PASSED              [ 90%]
-test_llm_fallback.py::test_falls_back_to_next_real_provider PASSED       [ 91%]
+test_llm_fallback.py::test_primary_used_when_healthy PASSED              [ 91%]
+test_llm_fallback.py::test_falls_back_to_next_real_provider PASSED       [ 92%]
 test_llm_fallback.py::test_all_fail_raises_with_real_reasons_never_fake_output PASSED [ 93%]
 test_llm_fallback.py::test_missing_keys_are_skipped_not_called PASSED    [ 94%]
-test_llm_fallback.py::test_no_cross_provider_fallback_in_eval_mode PASSED [ 95%]
+test_llm_fallback.py::test_no_cross_provider_fallback_in_eval_mode PASSED [ 96%]
 test_llm_fallback.py::test_custom_fallback_order PASSED                  [ 97%]
 test_llm_fallback.py::test_classify_error PASSED                         [ 98%]
 test_llm_fallback.py::test_check_providers_reports_each PASSED           [100%]
 
-============================= 75 passed in 6.59s =============================
+============================= 78 passed in 41.47s =============================
+```=========
 ```
 
 ---

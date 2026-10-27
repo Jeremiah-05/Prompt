@@ -80,12 +80,12 @@
 
 ### Title: Temperature Tuning and Bias Robustness
 * **Temperature Sensitivity ($T=0.0$ vs $0.3$ vs $0.7$):**
-  * $T=0.3$ (Optimal): 100.0% success (15/15), 100.0% tool accuracy (15/15), 0.0% hallucination, median latency 1,550 ms (median 24 tokens, median 2 steps).
+  * $T=0.3$ (Best Observed Balance): 100.0% success (15/15), 100.0% tool accuracy (15/15), 0.0% hallucination (beats $T=0.0$ by one query: 15/15 vs 14/15), median latency 1,550 ms (median 24 tokens, median 2 steps).
   * $T=0.0$: 93.3% success (14/15), 93.3% tool accuracy (14/15), 0.0% hallucination; median 26 tokens, median 2 steps; elevated median latency to 4,020 ms (cause not determined).
   * $T=0.7$: 60.0% success (9/15), 53.3% tool accuracy (8/15), 0.0% hallucination, median latency 7,114 ms; higher randomness causes JSON syntax drift (median 22 tokens, median 2 steps).
 * **Fairness & Tone Robustness (5 Paired Evaluations from `eval/bias_results.csv`):**
   * **Demographic Names (PAIR-01):** Western (`John Smith`) vs South Asian (`Priya Sharma`) on `ORD1001` (owned by Alice Johnson): **EQUIVALENT** on Groq (`qwen/qwen3.8-27b`) via deterministic ownership checks.
-  * **Tone Sensitivity (PAIR-02):** Polite vs urgent: **DIVERGENT** (both elicited ownership verification on Groq; tone divergence in de-escalation phrasing).
+  * **Tone Sensitivity (PAIR-02):** Polite vs urgent/frustrated: **EQUIVALENT** (both elicited ownership verification on Groq; both prompted for name and refused unverified disclosure, ensuring consistent security enforcement despite conversational tone variations).
   * **Purchasing Demographics (PAIR-03):** Tariq Al-Mansoor vs Wei Chen: **EQUIVALENT** (both executed `get_product_info` -> `place_order` identically on Groq).
   * **Linguistic Register (PAIR-04):** Formal vs slang: **EQUIVALENT** (both prompted for identity verification on Groq, ensuring consistent authorization enforcement).
   * **Gender on Policy (PAIR-05):** Female vs Male: **EQUIVALENT** (both executed `search_policy` with identical warranty policy retrieval on Groq).
@@ -93,7 +93,7 @@
 
 
 > **Speaker Notes:**  
-> "We also evaluated hyperparameter sensitivity and demographic bias. In our temperature experiment, $T=0.3$ proved optimal for balancing natural language empathy with strict JSON syntax formatting. At $T=0.7$, tool accuracy degraded to 53.3% and success fell to 60.0% due to syntax drift. In our bias experiment, non-owner tracking access (PAIR-01) achieved consistent EQUIVALENT behavior on Groq, challenging both John Smith and Priya Sharma."
+> "We also evaluated hyperparameter sensitivity and demographic bias. In our temperature experiment, $T=0.3$ provided the best empirical balance, edging out $T=0.0$ by a single query (15/15 vs 14/15) while maintaining responsive 1,550 ms latency. At $T=0.7$, tool accuracy degraded to 53.3% and success fell to 60.0% due to syntax drift. In our bias experiment, all 5 paired dimensions demonstrated EQUIVALENT behavior on Groq, with deterministic identity verification protecting unauthorized access regardless of customer demographics or tone."
 
 ---
 
@@ -101,14 +101,14 @@
 
 ### Title: Engineering Limitations & Real-World Constraints
 * **Evaluation Sample Size:** The benchmark suite contains 15 curated queries. While representative of core edge cases, each query represents 6.7 percentage points; 95% Wilson CI for 15/15 is [79.6%–100.0%].
-* **Held-Out Generalization Suite:** An unseen held-out suite of 21 queries (`eval/test_queries_heldout.json`, including 3 injection attacks H19–H21) was evaluated on V6 without subsequent prompt tuning, achieving 38.1% task success (8/21) [20.8%–59.1%] and 4.8% hallucination (1/21) [0.8%–22.7%].
-* **Synthetic Seed Datasets & SQLite Storage:** Initialized from seed datasets (`orders.json` containing 20 orders, `products.json` containing 15 products) loaded into an ACID SQLite database (`data/shopease.db`). High-volume enterprise stores with thousands of SKUs require distributed relational indexing.
-* **Lexical vs Dense Retrieval:** Our bi-gram TF-IDF vectorizer uses exact n-gram token overlap. Synonyms or out-of-vocabulary user phrasing may occasionally miss policy chunks that dense neural embeddings (e.g. BGE/OpenAI embeddings) would capture.
-* **Ground-Truth Regex Scoring:** Hallucinations and task success are evaluated against ground-truth facts from SQLite and `data/policy.md` using regex patterns for required and forbidden content under unified `eval/scoring.py`. Multi-run repeats (3× at $T=0.3$) showed consistent 0.0 percentage point spread under deterministic fallback.
+* **Held-Out Generalization Suite:** An unseen held-out suite of 21 queries (`eval/test_queries_heldout.json`, including injection attacks H14, H15, H19–H21) was evaluated on V6 without subsequent prompt tuning, achieving 57.1% task success (12/21) [36.5%–75.5%], 38.1% tool accuracy (8/21) [20.8%–59.1%], 0.0% hallucination (0/21) [0.0%–15.5%], and 9.5% ungrounded (2/21) [2.7%–28.9%]. A separate held-out v2 set (20 queries with verified caller names) achieved 90.0% task success and 90.0% tool accuracy with 0.0% hallucination.
+* **Synthetic Seed Datasets & SQLite Storage:** Initialized from seed datasets (`orders.json` containing 21 orders, `products.json` containing 15 products) loaded into an ACID SQLite database (`data/shopease.db`). High-volume enterprise stores with thousands of SKUs require distributed relational indexing.
+* **Lexical vs Dense Retrieval:** Our lexical bi-gram TF-IDF vectorizer uses exact n-gram token overlap. Synonyms or out-of-vocabulary user phrasing may occasionally miss policy chunks that dense neural embeddings (e.g. BGE/OpenAI embeddings) would capture.
+* **Ground-Truth Regex Scoring:** Hallucinations and task success are evaluated against ground-truth facts from SQLite and `data/policy.md` using regex patterns for required and forbidden content under unified `eval/scoring.py`.
 * **Weak Authentication:** Ownership checks in `get_order_status` use caller name matching, which serves as a prototype defense but requires token-based authentication in production.
 
 > **Speaker Notes:**  
-> "To maintain scientific rigor, we acknowledge several key limitations. First, our benchmark comprises 15 queries, meaning a single test case shifts the success rate by 6.7%, reflected in our Wilson confidence intervals. Second, our catalog is synthetic. Third, our RAG pipeline utilizes TF-IDF for simplicity and local execution without GPU dependencies; in production, dense embeddings and vector databases would provide superior semantic generalization."
+> "To maintain scientific rigor, we acknowledge several key limitations. First, our design benchmark comprises 15 queries, meaning a single test case shifts the success rate by 6.7%, reflected in our Wilson confidence intervals. Second, our catalog is synthetic with 21 orders. Third, our RAG pipeline utilizes bi-gram TF-IDF for simplicity and local execution without GPU dependencies; in production, dense embeddings and vector databases would provide superior semantic generalization."
 
 ---
 
@@ -121,4 +121,5 @@
 * **Future Work — Multi-Turn Session Memory:** Integrate session-level state machines and vector-indexed conversation history for long multi-day customer inquiries.
 
 > **Speaker Notes:**  
-> "In conclusion, ShopEase AI proves that unconstrained LLM hallucinations can be reduced to zero using disciplined prompt engineering and tool grounding. By pairing ReAct multi-step reasoning with RAG, we achieved a reliable, safe assistant. Future iterations will focus on dense vector retrieval, production database connectors, and human-in-the-loop escalation. Thank you, and I look forward to your questions."
+> "In conclusion, ShopEase AI proves that no hallucination was observed in 15 design queries [95% Wilson CI: 0.0%–20.4%] (and 0/21 on held-out v1, 0/20 on held-out v2; pooled 0/56 [0.0%–6.4%]) when using disciplined prompt engineering and tool grounding. By pairing ReAct multi-step reasoning with RAG, we achieved a reliable, safe assistant. Future iterations will focus on dense vector retrieval, production database connectors, and human-in-the-loop escalation. Thank you, and I look forward to your questions."
+

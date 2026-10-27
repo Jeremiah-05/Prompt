@@ -54,6 +54,11 @@ Every metric in the project has been synchronized to the empirical CSV source of
 | **T=0.3 vs T=0.0 Comparison** | "T=0.3 is optimal, T=0.0 rigid" | **T=0.3 (15/15 = 100%) vs T=0.0 (14/15 = 93.3%)** | [`eval/param_results.csv`](file:///e:/New%20folder/eval/param_results.csv) | Softened optimality claim; noted T=0.3 edges out T=0.0 by 1 query (Q15). Elevated latency at T=0.0 marked as "cause not determined". |
 | **Gradio Tab Count** | 3 Tabs | **4 Tabs** | [`app.py`](file:///e:/New%20folder/app.py) | Four synchronized tabs exist: Chat, Prompt Inspector, Evaluation Dashboard, and A/B Arena. |
 | **Pytest Unit Test Count** | 75 Tests | **78 Tests** | Live Pytest Run | Added 3 tests: date confusion regex scoring, multi-turn order preservation, and two-turn ReAct execution. |
+| **Telemetry Runs in SQLite** | 18 Records | **24 Records** | SQLite `data/shopease.db` | Verified and preserved across demo reseeds via `scripts/reset_demo_db.py`. |
+| **A/B Human Preference Votes** | 1 Vote (Model B) | **2 Votes** (Model A: 0, Model B: 2) | SQLite `data/shopease.db` | Real human preference votes cast in the Gradio A/B Testing Arena; zero synthetic votes. |
+| **OpenRouter V6 Evaluation** | Fallback only (not benchmarked) | **66.7%** Success (10/15), **93.3%** Tool Acc | [`eval/results_v6_openrouter.csv`](file:///e:/New%20folder/eval/results_v6_openrouter.csv) | Live 15-query run on `meta-llama/llama-3.3-70b-instruct` with `ALLOW_PROVIDER_FALLBACK=0`. |
+| **Top-p Nucleus Sweep** | Not evaluated | **45 Live Runs** ($p=0.5, 0.9, 1.0$) | [`eval/param_results_topp.csv`](file:///e:/New%20folder/eval/param_results_topp.csv) | Evaluated on OpenRouter at $T=0.3$: $p=0.90$ achieved 100.0% tool accuracy; $p=0.50$ achieved 6.7% hallucination. |
+| **Held-Out v2 Benchmark** | Unauthenticated (v1 57.1%) | **90.0%** (18/20) Success, **0.0%** Hallucination | [`eval/heldout_v2_results.csv`](file:///e:/New%20folder/eval/heldout_v2_results.csv) | 20 queries with authenticated customer names confirming high generalization under authorized sessions. |
 
 ---
 

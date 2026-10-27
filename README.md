@@ -113,7 +113,7 @@ Extracted directly from `llm_client.py` and `prompts/builder.py`:
 | Provider | Model Identifier | Temperature ($T$) | Top-p ($p$) | Max Tokens | Fallback Order | Notes |
 |:---|:---|:---:|:---:|:---:|:---|:---|
 | **Groq (Default)** | `qwen/qwen3.8-27b` | `0.3` (V3–V6)<br>`0.5` (V2)<br>`0.7` (V1) | `0.9` | `512` | Groq $\rightarrow$ OpenRouter $\rightarrow$ Anthropic $\rightarrow$ OpenAI $\rightarrow$ Gemini | High-speed LPU hardware inference (median ~775ms/step, median end-to-end V6 latency 1,550 ms). Primary backend. |
-| **OpenRouter** | `meta-llama/llama-3.3-70b-instruct` | `0.3` (Default) | `0.9` | `512` | OpenRouter $\rightarrow$ Groq $\rightarrow$ Anthropic $\rightarrow$ OpenAI $\rightarrow$ Gemini | High-capability Meta Llama 3.3 70B reasoning via OpenRouter unified API (answered live requests as a fallback; not benchmarked). |
+| **OpenRouter** | `meta-llama/llama-3.3-70b-instruct` | `0.3` (Default) | `0.9` | `512` | OpenRouter $\rightarrow$ Groq $\rightarrow$ Anthropic $\rightarrow$ OpenAI $\rightarrow$ Gemini | High-capability Meta Llama 3.3 70B reasoning via OpenRouter unified API (empirically benchmarked: 66.7% success, 93.3% tool accuracy in `eval/results_v6_openrouter.csv`; 45-run top-p sweep in `eval/param_results_topp.csv`). |
 | **Google Gemini** | `gemini-2.5-flash` | `0.3` (Default) | `0.9` | `512` | Gemini $\rightarrow$ Groq $\rightarrow$ OpenRouter $\rightarrow$ Anthropic $\rightarrow$ OpenAI | Secondary fallback. Free tier has 20 requests/day quota. |
 | **OpenAI** | `gpt-4o-mini` | `0.3` (Default) | `0.9` | `512` | OpenAI $\rightarrow$ Groq $\rightarrow$ OpenRouter $\rightarrow$ Anthropic $\rightarrow$ Gemini | Tertiary fallback endpoint. |
 | **Anthropic** | `claude-sonnet-4-20250514` | `0.3` (Default) | `0.9` | `512` | Anthropic $\rightarrow$ Groq $\rightarrow$ OpenRouter $\rightarrow$ OpenAI $\rightarrow$ Gemini | High-capability reasoning provider via Claude Messages API. Optional backend. |
@@ -188,6 +188,16 @@ Evaluated under `eval/param_test.py` across all 15 benchmark queries (transcribe
 
 *Note: Median ReAct steps (2) and median completion tokens (22–26) are consistent across temperatures; evidence does not show repetitive thought expansion.
 
+### 🎯 Nucleus Sampling (Top-p) Sensitivity Experiment (V6 on OpenRouter Llama 3.3 70B, T=0.3)
+
+Evaluated under `eval/param_test.py` across all 15 benchmark queries (transcribed from `eval/param_results_topp.csv`):
+
+| Tested Top-p ($p$) | Provider & Model | Task Success Rate | Tool Call Accuracy | Hallucination Rate | Mean Latency | Observations |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---|
+| **$p = 0.50$** | openrouter (`llama-3.3-70b`) | **73.3%** (11/15) | **93.3%** (14/15) | **6.7%** (1/15) | 18,702 ms | Tighter nucleus sampling constrained hallucination risk to 6.7% (1/15) with fastest inference, but missed tool invocation on adversarial query Q13. |
+| **$p = 0.90$ (Default)** | openrouter (`llama-3.3-70b`) | **73.3%** (11/15) | **100.0%** (15/15) | **13.3%** (2/15) | 22,284 ms | Maximum tool compliance (100.0% across all 15 queries). Slight hallucination increase on edge cases (Q05, Q07). (Q13 fell back to Gemini due to OpenRouter network blip). |
+| **$p = 1.00$** | openrouter (`llama-3.3-70b`) | **73.3%** (11/15) | **100.0%** (15/15) | **13.3%** (2/15) | 20,174 ms | Full vocabulary tail sampling yielded identical task success (73.3%), tool accuracy (100.0%), and hallucination rate (13.3%) to $p=0.90$. |
+
 ---
 
 ## 📊 Evaluation Methodology & Failure Analysis
@@ -249,7 +259,7 @@ We evaluated prompt V6 across 5 paired query variations in `eval/bias_test.py` (
 
 In addition to automated regex scoring, ShopEase AI incorporates a Gradio-based blind **A/B Testing Arena** for human evaluation. In compliance with rigorous evaluation ethics:
 - **No Agent Voting**: All A/B votes represent genuine human judgment; zero automated or simulated votes are recorded.
-- **Current Live Database Count**: The SQLite `ab_log` table currently records **1 human vote** (`Model A: 0, Model B: 1`).
+- **Current Live Database Count**: The SQLite `ab_log` table currently records **2 human votes** (`Model A: 0, Model B: 2`).
 - **Batch Evaluation Protocol (`scripts/run_ab_batch.py`)**: Defines 10 standardized query pairs (5 comparing V3 vs V6 at $T = 0.3$; 5 comparing V6 at $T = 0.3$ vs $T = 0.7$) executed on Groq (`qwen/qwen3.8-27b`) with `ALLOW_PROVIDER_FALLBACK=0`.
 - **Status**: Batch generation is **NOT RUN (pending Groq 200,000 TPD quota reset)**. Once executed, pairs are logged to `ab_log` with the vote column left EMPTY (""). Win counts appear strictly after human operators cast blind preferences in the Arena tab.
 

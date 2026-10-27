@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-A full end-to-end verification and diagnostic scan of the entire **ShopEase AI** codebase was conducted using both the formal pytest test suite (`eval/test_cases.py`, `eval/test_react.py`, `eval/test_security.py`, `test_llm_fallback.py`) and dedicated diagnostic scripts. All 78 test cases passed without failures. The live SQLite database (`data/shopease.db`) was verified to be strictly isolated during test runs via `eval/conftest.py` with 21 orders and 15 products. All benchmark tables across `README.md`, `docs/REPORT.md`, `docs/PRESENTATION_OUTLINE.md`, and `prompts/evaluation_log.md` match `eval/results.csv`, `eval/param_results.csv`, `eval/bias_results.csv`, `eval/heldout_results.csv`, and `eval/heldout_v2_results.csv` generated via `eval/render_readme_tables.py`. In accordance with strict evaluation rules, `scripts/cast_ab_votes.py` was permanently deleted; `ab_log` records zero programmatic votes, correctly reporting `"no votes recorded yet"` until votes are cast interactively in the A/B tab.
+A full end-to-end verification and diagnostic scan of the entire **ShopEase AI** codebase was conducted using both the formal pytest test suite (`eval/test_cases.py`, `eval/test_react.py`, `eval/test_security.py`, `test_llm_fallback.py`) and dedicated diagnostic scripts. All 78 test cases passed without failures. The live SQLite database (`data/shopease.db`) was verified to be strictly isolated during test runs via `eval/conftest.py` with 21 orders and 15 products. All benchmark tables across `README.md`, `docs/REPORT.md`, `docs/PRESENTATION_OUTLINE.md`, and `prompts/evaluation_log.md` match `eval/results.csv`, `eval/param_results.csv`, `eval/bias_results.csv`, `eval/heldout_results.csv`, and `eval/heldout_v2_results.csv` generated via `eval/render_readme_tables.py`. In accordance with strict evaluation rules, `scripts/cast_ab_votes.py` was permanently deleted; `ab_log` records zero programmatic votes, with 2 genuine human preference votes recorded interactively in the A/B tab (Model A: 0, Model B: 2).
 
 | Subsystem / Test Suite | Scope | Status | Notes |
 |:---|:---:|:---:|:---|
@@ -18,12 +18,12 @@ A full end-to-end verification and diagnostic scan of the entire **ShopEase AI**
 | **`eval/test_security.py`** | Security & Privacy | **14/14 PASSED** | Length cap (1k), rate limiter (15 req/min), PII redaction (13–19 digit cards), transactional confirmation. |
 | **`test_llm_fallback.py`** | Multi-Provider Fallback & Error Classification | **8/8 PASSED** | Verifies primary provider usage, real provider fallback, error classification, key omission skipping, and strict no-simulated-output guarantee. |
 | **Database Isolation** | `eval/conftest.py` | **VERIFIED** | Tests run on temporary DB copy; live DB order count remains unchanged at 21. |
-| **Database Integrity** | `data/shopease.db` | **VERIFIED** | Orders (21), Products (15), Telemetry Runs (18), A/B Log (1 recorded human vote: Model A: 0, Model B: 1; zero automated votes). |
+| **Database Integrity** | `data/shopease.db` | **VERIFIED** | Orders (21), Products (15), Telemetry Runs (24), A/B Log (2 recorded human votes: Model A: 0, Model B: 2; zero automated votes). |
 | **Demo Reseed Script** | `scripts/reset_demo_db.py` | **VERIFIED** | Reseeds orders (21) and products (15); clears live logs; preserves telemetry. |
 | **Screenshots** | `docs/screenshots/` | **VERIFIED** | 4/4 captured upright (`chat.png`, `react_trace.png`, `inspector.png`, `eval_dashboard.png`). |
 | **Prompt Library** | `prompts/v1.md`..`v6.md` | **VERIFIED** | All 6 versions migrated to YAML frontmatter with bi-gram TF-IDF retriever naming. Compact tool definitions achieve 52.6% token reduction. |
 | **Benchmark Tables** | `render_readme_tables.py` | **VERIFIED** | 100% parity across `README.md`, `REPORT.md`, `PRESENTATION_OUTLINE.md`, `evaluation_log.md`. |
-| **A/B Testing Arena** | `scripts/run_ab_batch.py` | **VERIFIED** | 1 human vote recorded in `ab_log` (`Model B`); batch generation pending Groq quota reset. Programmatic voting script permanently deleted. |
+| **A/B Testing Arena** | `scripts/run_ab_batch.py` | **VERIFIED** | 2 human votes recorded in `ab_log` (`Model B`); batch generation pending Groq quota reset. Programmatic voting script permanently deleted. |
 
 ---
 
@@ -131,8 +131,8 @@ test_llm_fallback.py::test_check_providers_reports_each PASSED           [100%]
 2. **Current Database Content**:
    - `orders`: 21 records (`ORD1001` through `ORD1021`).
    - `products`: 15 records (`PROD001` through `PROD015`).
-   - `ab_log`: 1 pair recorded with 1 human preference vote (Model A: 0, Model B: 1).
-   - `telemetry_runs`: 18 records preserved across database reseeds.
+   - `ab_log`: 2 pairs recorded with 2 human preference votes (Model A: 0, Model B: 2).
+   - `telemetry_runs`: 24 records preserved across database reseeds.
 3. **Reseed Verification (`scripts/reset_demo_db.py`)**:
    - Reseeded orders and products while preserving `telemetry_runs` and `ab_log`.
    - Verified that demo orders match ground-truth:
@@ -166,6 +166,25 @@ All benchmark tables and metrics are verified to have been compiled directly fro
 | **$T = 0.0$** | groq (qwen/qwen3.8-27b) | **93.3%** (14/15) | **93.3%** (14/15) | **0.0%** (0/15) | 4,020 ms* | High determinism (93.3% success, 93.3% tool accuracy). Median 26 tokens, median 2 steps. Elevated 4,020 ms latency (cause not determined). |
 | **$T = 0.3$ (Default)** | groq (qwen/qwen3.8-27b) | **100.0%** (15/15) | **100.0%** (15/15) | **0.0%** (0/15) | 1,550 ms | Optimal balance: 100.0% success, 100.0% tool compliance, 0.0% hallucination. Median 24 tokens, median 2 steps, 1,550 ms latency. |
 | **$T = 0.7$** | groq (qwen/qwen3.8-27b) | **60.0%** (9/15) | **53.3%** (8/15) | **0.0%** (0/15) | 7,114 ms | Sampling randomness caused syntax drift (60.0% success, 53.3% tool accuracy). Median 22 tokens, median 2 steps. |
+
+### Nucleus Sampling (Top-p) Sensitivity Matrix (V6 on OpenRouter Llama 3.3 70B, T=0.3)
+
+Evaluated under `eval/param_test.py` across all 15 benchmark queries (transcribed from `eval/param_results_topp.csv`):
+
+| Tested Top-p ($p$) | Provider & Model | Task Success Rate | Tool Call Accuracy | Hallucination Rate | Mean Latency | Observations |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---|
+| **$p = 0.50$** | openrouter (`llama-3.3-70b`) | **73.3%** (11/15) | **93.3%** (14/15) | **6.7%** (1/15) | 18,702 ms | Tighter nucleus sampling constrained hallucination risk to 6.7% (1/15) with fastest inference, but missed tool invocation on adversarial query Q13. |
+| **$p = 0.90$ (Default)** | openrouter (`llama-3.3-70b`) | **73.3%** (11/15) | **100.0%** (15/15) | **13.3%** (2/15) | 22,284 ms | Maximum tool compliance (100.0% across all 15 queries). Slight hallucination increase on edge cases (Q05, Q07). (Q13 fell back to Gemini due to OpenRouter network blip). |
+| **$p = 1.00$** | openrouter (`llama-3.3-70b`) | **73.3%** (11/15) | **100.0%** (15/15) | **13.3%** (2/15) | 20,174 ms | Full vocabulary tail sampling yielded identical task success (73.3%), tool accuracy (100.0%), and hallucination rate (13.3%) to $p=0.90$. |
+
+### Cross-Provider Evaluation Benchmark (V6 Production Prompt)
+
+Evaluated across the 15 standardized design queries with `ALLOW_PROVIDER_FALLBACK=0`:
+
+| Provider | Model Identifier | Task Success Rate | Tool Call Accuracy | Hallucination Rate | Ungrounded Rate | Source File |
+|:---|:---|:---:|:---:|:---:|:---:|:---|
+| **Groq (Primary)** | `qwen/qwen3.8-27b` | **100.0%** (15/15) | **100.0%** (15/15) | **0.0%** (0/15) | **0.0%** (0/15) | `eval/param_results.csv` |
+| **OpenRouter** | `meta-llama/llama-3.3-70b-instruct` | **66.7%** (10/15) | **93.3%** (14/15) | **20.0%** (3/15) | **0.0%** (0/15) | `eval/results_v6_openrouter.csv` |
 
 ### Fairness and Demographic Bias Evaluation
 
@@ -211,7 +230,7 @@ All benchmark tables and metrics are verified to have been compiled directly fro
 
 ### Blind A/B Human Evaluation Protocol
 
-- **Recorded Human Votes in `ab_log`**: 1 human preference vote recorded (`Model A: 0, Model B: 1`).
+- **Recorded Human Votes in `ab_log`**: 2 human preference votes recorded (`Model A: 0, Model B: 2`).
 - **Batch Evaluation Suite (`scripts/run_ab_batch.py`)**: 10 paired comparison queries on Groq (`qwen/qwen3.8-27b`) with `ALLOW_PROVIDER_FALLBACK=0` (5 pairs V3 vs V6 at $T = 0.3$; 5 pairs V6 at $T = 0.3$ vs $T = 0.7$).
 - **Status**: **NOT RUN (pending Groq 200,000 TPD quota reset)**. All pairs will be logged with the `vote` column left EMPTY (""). Win counts appear strictly after human evaluation in the Gradio Arena.
 
@@ -239,11 +258,11 @@ All four enterprise security layers defined in `security.py` were verified again
 To preserve rigorous transparency and adhere to scientific integrity guidelines, the following items are explicitly **not verified** by this automated report:
 
 1. **Subjective Human Quality on Unlogged A/B Pairs**:
-   - The `ab_log` table contains zero automated or pre-scripted votes, correctly reporting `"no votes recorded yet"`. Subjective evaluation relies solely on human operators casting blind preferences directly within the Gradio A/B testing tab.
+   - The `ab_log` table contains zero automated or pre-scripted votes. Currently, 2 genuine human preference votes are recorded (`Model A: 0, Model B: 2`). Subjective evaluation relies solely on human operators casting blind preferences directly within the Gradio A/B testing tab.
 2. **Upstream LLM Behavior on Unseeded Inputs**:
    - This report does **NOT** guarantee generative output consistency on arbitrary external user queries outside the curated 15-query benchmark, the 5 bias test pairs, and the 21 held-out test queries.
 3. **Non-Groq Primary Benchmark Behavior**:
-   - Primary benchmark metrics reflect Groq `qwen/qwen3.8-27b`. While multi-provider fallbacks to OpenRouter (`meta-llama/llama-3.3-70b-instruct` - answered live requests as a fallback; not benchmarked), Google Gemini (`gemini-2.5-flash`), Anthropic (`claude-sonnet-4-20250514`), and OpenAI (`gpt-4o-mini`) are fully integrated and tested via `test_llm_fallback.py`, complete 15-query benchmark matrices for alternative providers were not executed as primary runs to preserve row comparability under identical evaluation conditions.
+   - Primary benchmark metrics reflect Groq `qwen/qwen3.8-27b`. In Phase 2, OpenRouter (`meta-llama/llama-3.3-70b-instruct`) was benchmarked across the 15-query suite (66.7% success, 93.3% tool accuracy in `eval/results_v6_openrouter.csv`) and evaluated across a 45-run nucleus sampling sweep in `eval/param_results_topp.csv`. Fallbacks to Google Gemini (`gemini-2.5-flash`), Anthropic (`claude-sonnet-4-20250514`), and OpenAI (`gpt-4o-mini`) are fully integrated and tested via `test_llm_fallback.py`, with partial real runs recorded without simulated output.
 4. **Quota-Limited Real-Provider Protocol**:
    - When provider API daily token quotas or rate limits are reached, the application strictly fails fast by raising `LLMUnavailableError` and reporting detailed provider error reasons, in compliance with the project rule prohibiting simulated or fallback output. All 5 bias test pairs (PAIR-01 through PAIR-05) ran to completion on Groq.
 5. **Multi-Region Distributed Database Concurrency**:

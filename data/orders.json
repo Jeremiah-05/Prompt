@@ -1,0 +1,399 @@
+[
+  {
+    "order_id": "ORD1001",
+    "customer_name": "Alice Johnson",
+    "items": [
+      {
+        "product_id": "PROD001",
+        "qty": 1
+      },
+      {
+        "product_id": "PROD015",
+        "qty": 2
+      }
+    ],
+    "status": "delivered",
+    "order_date": "2026-03-15",
+    "delivery_date": "2026-03-18",
+    "tracking_id": "TRK1001US",
+    "return_eligible_until": "2026-03-29",
+    "payment_method": "credit_card",
+    "total": 1149.97
+  },
+  {
+    "order_id": "ORD1002",
+    "customer_name": "Bob Stevens",
+    "items": [
+      {
+        "product_id": "PROD003",
+        "qty": 1
+      }
+    ],
+    "status": "shipped",
+    "order_date": "2026-09-20",
+    "delivery_date": null,
+    "tracking_id": "TRK1002US",
+    "return_eligible_until": "2026-10-20",
+    "payment_method": "paypal",
+    "total": 79.99
+  },
+  {
+    "order_id": "ORD1003",
+    "customer_name": "Carol Danvers",
+    "items": [
+      {
+        "product_id": "PROD006",
+        "qty": 1
+      },
+      {
+        "product_id": "PROD009",
+        "qty": 1
+      }
+    ],
+    "status": "cancelled",
+    "order_date": "2026-10-05",
+    "delivery_date": null,
+    "tracking_id": null,
+    "return_eligible_until": null,
+    "payment_method": "credit_card",
+    "total": 749.99
+  },
+  {
+    "order_id": "ORD1004",
+    "customer_name": "David Lee",
+    "items": [
+      {
+        "product_id": "PROD002",
+        "qty": 1
+      }
+    ],
+    "status": "delivered",
+    "order_date": "2026-08-01",
+    "delivery_date": "2026-08-05",
+    "tracking_id": "TRK1004US",
+    "return_eligible_until": "2026-08-15",
+    "payment_method": "credit_card",
+    "total": 699.0
+  },
+  {
+    "order_id": "ORD1005",
+    "customer_name": "Emma Wilson",
+    "items": [
+      {
+        "product_id": "PROD010",
+        "qty": 3
+      }
+    ],
+    "status": "delivered",
+    "order_date": "2026-09-10",
+    "delivery_date": "2026-09-13",
+    "tracking_id": "TRK1005US",
+    "return_eligible_until": "2026-10-10",
+    "payment_method": "credit_card",
+    "total": 38.97
+  },
+  {
+    "order_id": "ORD1006",
+    "customer_name": "Frank Miller",
+    "items": [
+      {
+        "product_id": "PROD004",
+        "qty": 2
+      },
+      {
+        "product_id": "PROD012",
+        "qty": 1
+      }
+    ],
+    "status": "shipped",
+    "order_date": "2026-09-28",
+    "delivery_date": null,
+    "tracking_id": "TRK1006US",
+    "return_eligible_until": "2026-10-28",
+    "payment_method": "debit_card",
+    "total": 219.97
+  },
+  {
+    "order_id": "ORD1007",
+    "customer_name": "Grace Kim",
+    "items": [
+      {
+        "product_id": "PROD007",
+        "qty": 1
+      }
+    ],
+    "status": "delivered",
+    "order_date": "2026-07-01",
+    "delivery_date": "2026-07-04",
+    "tracking_id": "TRK1007US",
+    "return_eligible_until": "2026-07-15",
+    "payment_method": "paypal",
+    "total": 299.0
+  },
+  {
+    "order_id": "ORD1008",
+    "customer_name": "Henry Brown",
+    "items": [
+      {
+        "product_id": "PROD005",
+        "qty": 1
+      },
+      {
+        "product_id": "PROD011",
+        "qty": 1
+      }
+    ],
+    "status": "delivered",
+    "order_date": "2026-09-01",
+    "delivery_date": "2026-09-04",
+    "tracking_id": "TRK1008US",
+    "return_eligible_until": "2026-10-01",
+    "payment_method": "credit_card",
+    "total": 159.98
+  },
+  {
+    "order_id": "ORD1009",
+    "customer_name": "Iris Chen",
+    "items": [
+      {
+        "product_id": "PROD008",
+        "qty": 1
+      }
+    ],
+    "status": "processing",
+    "order_date": "2026-10-08",
+    "delivery_date": null,
+    "tracking_id": null,
+    "return_eligible_until": null,
+    "payment_method": "credit_card",
+    "total": 549.0
+  },
+  {
+    "order_id": "ORD1010",
+    "customer_name": "James Taylor",
+    "items": [
+      {
+        "product_id": "PROD013",
+        "qty": 1
+      },
+      {
+        "product_id": "PROD014",
+        "qty": 1
+      }
+    ],
+    "status": "shipped",
+    "order_date": "2026-09-25",
+    "delivery_date": null,
+    "tracking_id": "TRK1010US",
+    "return_eligible_until": "2026-10-25",
+    "payment_method": "credit_card",
+    "total": 34.98
+  },
+  {
+    "order_id": "ORD1011",
+    "customer_name": "Karen White",
+    "items": [
+      {
+        "product_id": "PROD001",
+        "qty": 1
+      }
+    ],
+    "status": "delivered",
+    "order_date": "2026-08-20",
+    "delivery_date": "2026-08-23",
+    "tracking_id": "TRK1011US",
+    "return_eligible_until": "2026-09-03",
+    "payment_method": "credit_card",
+    "total": 1099.99
+  },
+  {
+    "order_id": "ORD1012",
+    "customer_name": "Leo Garcia",
+    "items": [
+      {
+        "product_id": "PROD002",
+        "qty": 1
+      },
+      {
+        "product_id": "PROD003",
+        "qty": 1
+      }
+    ],
+    "status": "delivered",
+    "order_date": "2026-09-12",
+    "delivery_date": "2026-09-15",
+    "tracking_id": "TRK1012US",
+    "return_eligible_until": "2026-09-26",
+    "payment_method": "paypal",
+    "total": 778.99
+  },
+  {
+    "order_id": "ORD1013",
+    "customer_name": "Mia Anderson",
+    "items": [
+      {
+        "product_id": "PROD006",
+        "qty": 1
+      }
+    ],
+    "status": "delivered",
+    "order_date": "2026-09-18",
+    "delivery_date": "2026-09-21",
+    "tracking_id": "TRK1013US",
+    "return_eligible_until": "2026-10-18",
+    "payment_method": "credit_card",
+    "total": 699.99
+  },
+  {
+    "order_id": "ORD1014",
+    "customer_name": "Noah Martinez",
+    "items": [
+      {
+        "product_id": "PROD009",
+        "qty": 2
+      }
+    ],
+    "status": "shipped",
+    "order_date": "2026-09-30",
+    "delivery_date": null,
+    "tracking_id": "TRK1014US",
+    "return_eligible_until": "2026-10-30",
+    "payment_method": "credit_card",
+    "total": 99.98
+  },
+  {
+    "order_id": "ORD1015",
+    "customer_name": "Olivia Thomas",
+    "items": [
+      {
+        "product_id": "PROD015",
+        "qty": 1
+      },
+      {
+        "product_id": "PROD010",
+        "qty": 5
+      }
+    ],
+    "status": "delivered",
+    "order_date": "2026-06-01",
+    "delivery_date": "2026-06-04",
+    "tracking_id": "TRK1015US",
+    "return_eligible_until": "2026-07-01",
+    "payment_method": "debit_card",
+    "total": 89.94
+  },
+  {
+    "order_id": "ORD1016",
+    "customer_name": "Paul Harris",
+    "items": [
+      {
+        "product_id": "PROD004",
+        "qty": 2
+      }
+    ],
+    "status": "processing",
+    "order_date": "2026-10-09",
+    "delivery_date": null,
+    "tracking_id": null,
+    "return_eligible_until": null,
+    "payment_method": "credit_card",
+    "total": 228.98
+  },
+  {
+    "order_id": "ORD1017",
+    "customer_name": "Quinn Lewis",
+    "items": [
+      {
+        "product_id": "PROD007",
+        "qty": 1
+      },
+      {
+        "product_id": "PROD008",
+        "qty": 1
+      }
+    ],
+    "status": "delivered",
+    "order_date": "2026-09-05",
+    "delivery_date": "2026-09-08",
+    "tracking_id": "TRK1017US",
+    "return_eligible_until": "2026-09-22",
+    "payment_method": "credit_card",
+    "total": 848.0
+  },
+  {
+    "order_id": "ORD1018",
+    "customer_name": "Rachel Green",
+    "items": [
+      {
+        "product_id": "PROD011",
+        "qty": 2
+      }
+    ],
+    "status": "shipped",
+    "order_date": "2026-10-01",
+    "delivery_date": null,
+    "tracking_id": "TRK1018US",
+    "return_eligible_until": "2026-11-01",
+    "payment_method": "paypal",
+    "total": 99.98
+  },
+  {
+    "order_id": "ORD1019",
+    "customer_name": "Sam Wilson",
+    "items": [
+      {
+        "product_id": "PROD013",
+        "qty": 2
+      },
+      {
+        "product_id": "PROD005",
+        "qty": 1
+      }
+    ],
+    "status": "delivered",
+    "order_date": "2026-08-15",
+    "delivery_date": "2026-08-18",
+    "tracking_id": "TRK1019US",
+    "return_eligible_until": "2026-09-14",
+    "payment_method": "credit_card",
+    "total": 139.97
+  },
+  {
+    "order_id": "ORD1020",
+    "customer_name": "Tina Foster",
+    "items": [
+      {
+        "product_id": "PROD012",
+        "qty": 1
+      },
+      {
+        "product_id": "PROD014",
+        "qty": 2
+      }
+    ],
+    "status": "delivered",
+    "order_date": "2026-09-22",
+    "delivery_date": "2026-09-25",
+    "tracking_id": "TRK1020US",
+    "return_eligible_until": "2026-10-22",
+    "payment_method": "credit_card",
+    "total": 64.97
+  },
+  {
+    "order_id": "ORD1021",
+    "customer_name": "Alex Kumar",
+    "items": [
+      {
+        "product_id": "PROD003",
+        "qty": 2
+      }
+    ],
+    "status": "processing",
+    "order_date": "2026-10-11",
+    "delivery_date": null,
+    "tracking_id": null,
+    "return_eligible_until": null,
+    "payment_method": "upi",
+    "total": 208.98
+  }
+]

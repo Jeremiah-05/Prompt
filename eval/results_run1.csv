@@ -1,0 +1,39 @@
+version,query_id,category,provider,fallback_used,model,temperature,task_success,tool_accuracy,hallucination,ungrounded,correct,latency_ms,retry_wait_ms,tool_calls_valid_json,tools_called,answer,note
+V6 — RAG + ReAct,Q01,order_lookup,groq,0,qwen/qwen3.8-27b,0.3,1,1,0,0,1,2418,0,1,get_order_status,"Hi Bob, your order **ORD1002** has been shipped! 🚚
+
+📦 **Tracking ID:** TRK1002US
+📅 **Order Date:** 2026-09-20
+💰 **Total:** ₹79.99
+
+You can use the tracking ID to follow your package. Standard delivery",valid shipped order
+V6 — RAG + ReAct,Q02,order_lookup,groq,0,qwen/qwen3.8-27b,0.3,1,1,0,0,1,58349,0,1,get_order_status,I couldn't find an order with ID **ORD9999**. Please double-check the order ID (it usually looks like ORD1001) and let me know — I'll be happy to look it up again!,invalid order ID
+V6 — RAG + ReAct,Q03,order_lookup,groq,0,qwen/qwen3.8-27b,0.3,1,1,0,0,1,112840,0,1,"get_order_status, get_product_info, get_product_info","Hi Alice! Your order **ORD1001** has been **delivered** on 2026-03-18.
+
+📦 **Items:**
+- 1x UltraBook Pro 14 (₹1,099.99)
+- 2x Scented Candle Set 3-pack (₹49.98)
+
+💰 **Total:** ₹1,149.97 (paid via credit ",wrong format order ID
+V6 — RAG + ReAct,Q04,product_qa,groq,0,qwen/qwen3.8-27b,0.3,1,1,0,0,1,50609,0,1,get_product_info,"Here are the details for the **UltraBook Pro 14**:
+
+💰 **Price:** ₹1,099.99
+📦 **Stock:** 12 units available
+
+**Specs:**
+- 14-inch MacBook-style laptop
+- Intel i7 Processor
+- 16GB RAM
+- 512GB SSD
+- 10-h",in-stock product lookup
+V6 — RAG + ReAct,Q05,product_qa,groq,0,qwen/qwen3.8-27b,0.3,1,1,0,0,1,45221,0,1,get_product_info,"I'm sorry, but the **Cotton T-Shirt 3-pack** (₹49.99) is currently **out of stock**. 
+
+I can't place an order for it right now. Would you like me to:
+1. Check for similar apparel items?
+2. Help you wi",out-of-stock item (stock 0)
+V6 — RAG + ReAct,Q06,product_qa,groq,0,qwen/qwen3.8-27b,0.3,1,1,0,0,1,75578,0,1,"get_product_info, get_product_info","Here’s a neutral comparison of both electronics:
+
+**SmartPhone X12** (₹699.00)
+- 6.5-inch OLED, 128GB, 48MP camera, 5G, 4000mAh battery
+- 1-year warranty, 14-day return
+
+**4K Smart TV 55-inch** (₹89.9",product comparison needs multiple lookups

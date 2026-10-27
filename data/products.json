@@ -1,0 +1,137 @@
+[
+  {
+    "product_id": "PROD001",
+    "name": "UltraBook Pro 14",
+    "category": "electronics",
+    "price": 1099.99,
+    "stock": 12,
+    "specs": "14-inch MacBook-style laptop, Intel i7, 16GB RAM, 512GB SSD, 10hr battery",
+    "warranty": "1-year manufacturer warranty, 30-day replacement for defects"
+  },
+  {
+    "product_id": "PROD002",
+    "name": "SmartPhone X12",
+    "category": "electronics",
+    "price": 699.0,
+    "stock": 25,
+    "specs": "6.5-inch OLED, 128GB storage, 48MP camera, 5G, 4000mAh battery",
+    "warranty": "1-year warranty, 14-day return window"
+  },
+  {
+    "product_id": "PROD003",
+    "name": "Wireless Noise-Cancel Headphones",
+    "category": "electronics",
+    "price": 79.99,
+    "stock": 38,
+    "specs": "Bluetooth 5.2, 30hr battery, active noise cancellation, foldable",
+    "warranty": "1-year warranty"
+  },
+  {
+    "product_id": "PROD004",
+    "name": "4K Smart TV 55-inch",
+    "category": "electronics",
+    "price": 89.99,
+    "stock": 7,
+    "specs": "55-inch 4K UHD, HDR10, 3 HDMI ports, built-in streaming apps",
+    "warranty": "2-year warranty, 14-day electronics return"
+  },
+  {
+    "product_id": "PROD005",
+    "name": "Classic Denim Jacket",
+    "category": "apparel",
+    "price": 59.99,
+    "stock": 60,
+    "specs": "Unisex, 100% cotton denim, sizes S-XL, machine washable",
+    "warranty": "30-day return if unworn with tags"
+  },
+  {
+    "product_id": "PROD006",
+    "name": "Pro Gaming Console",
+    "category": "electronics",
+    "price": 699.99,
+    "stock": 6,
+    "specs": "1TB SSD, 4K gaming, includes 1 controller, online multiplayer ready",
+    "warranty": "1-year warranty, 14-day return for electronics"
+  },
+  {
+    "product_id": "PROD007",
+    "name": "Digital Camera 24MP",
+    "category": "electronics",
+    "price": 299.0,
+    "stock": 15,
+    "specs": "24MP sensor, 4K video, Wi-Fi transfer, 18-55mm lens included",
+    "warranty": "1-year warranty"
+  },
+  {
+    "product_id": "PROD008",
+    "name": "Smart Watch Series 5",
+    "category": "electronics",
+    "price": 549.0,
+    "stock": 20,
+    "specs": "Heart rate, GPS, water resistant 50m, 18hr battery, iOS/Android",
+    "warranty": "1-year warranty, 14-day return"
+  },
+  {
+    "product_id": "PROD009",
+    "name": "Running Shoes AirFlex",
+    "category": "apparel",
+    "price": 49.99,
+    "stock": 101,
+    "specs": "Lightweight mesh, sizes 6-12, breathable, rubber sole",
+    "warranty": "30-day return if unworn"
+  },
+  {
+    "product_id": "PROD010",
+    "name": "Organic Green Tea 100-pack",
+    "category": "grocery",
+    "price": 12.99,
+    "stock": 200,
+    "specs": "Organic, 100 tea bags, caffeine 30mg per bag, best before 12 months",
+    "warranty": "Non-returnable food item unless damaged on arrival"
+  },
+  {
+    "product_id": "PROD011",
+    "name": "Cotton T-Shirt 3-pack",
+    "category": "apparel",
+    "price": 49.99,
+    "stock": 0,
+    "specs": "100% organic cotton, sizes M-L, colors white/black/gray",
+    "warranty": "30-day return if unwashed"
+  },
+  {
+    "product_id": "PROD012",
+    "name": "Stainless Steel Water Bottle 1L",
+    "category": "grocery",
+    "price": 19.99,
+    "stock": 80,
+    "specs": "Double-walled insulated, keeps cold 24hr / hot 12hr, BPA-free",
+    "warranty": "30-day return, lifetime warranty against defects"
+  },
+  {
+    "product_id": "PROD013",
+    "name": "Gourmet Coffee Beans 500g",
+    "category": "grocery",
+    "price": 14.99,
+    "stock": 120,
+    "specs": "Medium roast, Arabica 100%, origin Colombia, ground or whole bean",
+    "warranty": "Non-returnable food item unless damaged"
+  },
+  {
+    "product_id": "PROD014",
+    "name": "Artisan Dark Chocolate Box",
+    "category": "grocery",
+    "price": 19.99,
+    "stock": 90,
+    "specs": "12 pieces, 70% cocoa, fair trade, 200g box",
+    "warranty": "Non-returnable perishable unless damaged"
+  },
+  {
+    "product_id": "PROD015",
+    "name": "Scented Candle Set 3-pack",
+    "category": "grocery",
+    "price": 24.99,
+    "stock": 70,
+    "specs": "Soy wax, lavender/vanilla/citrus, 30hr burn each, gift box",
+    "warranty": "30-day return if unused"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "version": "V6 \u2014 RAG + ReAct",
+    "query_id": "H01",
+    "category": "order_lookup",
+    "provider": "groq",
+    "fallback_used": "0",
+    "model": "",
+    "temperature": "0.3",
+    "task_success": "0",
+    "tool_accuracy": "0",
+    "hallucination": "0",
+    "ungrounded": "0",
+    "correct": "0",
+    "latency_ms": "0",
+    "retry_wait_ms": "0",
+    "tool_calls_valid_json": "1",
+    "tools_called": "",
+    "answer": "I apologize, but I encountered a connection issue with the AI backend: All providers failed.\nPrimary (groq): Error code: 429 - {'error': {'message': 'Rate limit reached for model `qwen/qwen3.8-27b` in",
+    "note": "delivered order, simple lookup"
+  },
+  {
+    "version": "V6 \u2014 RAG + ReAct",
+    "query_id": "H02",
+    "category": "order_lookup",
+    "provider": "groq",
+    "fallback_used": 0,
+    "model": "",
+    "temperature": 0.3,
+    "task_success": 0,
+    "tool_accuracy": 0,
+    "hallucination": 0,
+    "ungrounded": 0,
+    "correct": 0,
+    "latency_ms": 0,
+    "retry_wait_ms": 0,
+    "tool_calls_valid_json": 1,
+    "tools_called": "",
+    "answer": "I apologize, but I encountered a connection issue with the AI backend: All providers failed.\nPrimary (groq): Error code: 429 - {'error': {'message': 'Rate limit reached for model `qwen/qwen3.8-27b` in",
+    "note": "shipped order, not yet delivered"
+  }
+]

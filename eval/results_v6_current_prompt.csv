@@ -1,0 +1,17 @@
+version,query_id,category,provider,fallback_used,model,temperature,task_success,tool_accuracy,hallucination,ungrounded,correct,latency_ms,retry_wait_ms,prompt_hash,tools_called,answer,note
+V6 — RAG + ReAct (current prompt),Q01,order_lookup,groq,0,qwen/qwen3.8-27b,0.3,1,1,0,0,1,1622,0,N/A,get_order_status,"Hi Bob! Your order **ORD1002** has been shipped. 🚚
+
+📦 **Tracking ID:** TRK1002US
+📅 **Order Date:** 2026-09-20
+💰 **Total:** ₹79.99 (PayPal)
+
+You can track your package using the tracking ID above. Stan",valid shipped order
+V6 — RAG + ReAct (current prompt),Q02,order_lookup,groq,0,qwen/qwen3.8-27b,0.3,1,1,0,0,1,1711,0,N/A,get_order_status,I couldn't find an order with ID **ORD9999**. Please double-check the order ID (it usually looks like ORD1001) and let me know if you'd like me to try again.,invalid order ID
+V6 — RAG + ReAct (current prompt),Q03,order_lookup,groq,0,qwen/qwen3.8-27b,0.3,1,1,0,0,1,55222,0,N/A,get_order_status,"Hi Alice, your order **ORD1001** has been **delivered** on **2026-03-18**.
+
+📋 **Order Details:**
+- Order Date: 2026-03-15
+- Total: ₹1,149.97
+- Payment: Credit Card
+- Tracking: TRK1001US
+- Items: 1x PR",wrong format order ID

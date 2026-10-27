@@ -1,0 +1,5 @@
+version,query_id,category,provider,fallback_used,model,temperature,task_success,tool_accuracy,hallucination,ungrounded,correct,latency_ms,retry_wait_ms,tool_calls_valid_json,tools_called,answer,note
+V6 — RAG + ReAct,H01,order_lookup,groq,0,,0.3,0,0,0,0,0,0,0,1,,"I apologize, but I encountered a connection issue with the AI backend: All providers failed.
+Primary (groq): Error code: 429 - {'error': {'message': 'Rate limit reached for model `qwen/qwen3.8-27b` in","delivered order, simple lookup"
+V6 — RAG + ReAct,H02,order_lookup,groq,0,,0.3,0,0,0,0,0,0,0,1,,"I apologize, but I encountered a connection issue with the AI backend: All providers failed.
+Primary (groq): Error code: 429 - {'error': {'message': 'Rate limit reached for model `qwen/qwen3.8-27b` in","shipped order, not yet delivered"

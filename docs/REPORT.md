@@ -13,7 +13,7 @@ Large Language Models (LLMs) deployed as conversational customer support agents 
 
 ---
 
-## 1. Problem Statement
+## 1. Problem Statement & Success Criteria [CO1, CO6]
 
 Automated conversational agents in modern e-commerce must satisfy two competing demands: maintaining a polite, natural, and empathetic dialogue with users while adhering strictly to real-time database facts and store regulations. Unconstrained generative language models exhibit measurable grounding and hallucination failure modes: our zero-shot baseline (V1) produced ungrounded answers on 4/15 (26.7%) queries and hallucinated on 3/15 (20.0%), inventing non-existent order statuses or fabricating store policies when answering unconstrained from parametric memory:
 1. **Fabrication of Non-Existent Orders and Tracking Identifiers**: When asked about invalid orders (e.g. `ORD9999`), zero-shot models routinely state that the order has shipped and fabricate bogus tracking numbers (e.g. `TRK-FAKE`), causing immense customer confusion.
@@ -28,9 +28,20 @@ Automated conversational agents in modern e-commerce must satisfy two competing 
 ### Core Objective
 **Objective**: Improve task success and reliability on e-commerce order operations (enforcing mandatory ownership verification, preventing fabricated order statuses or policies), raising task success from **46.7%** (7/15, 95% Wilson CI [24.8%–69.9%]) in the zero-shot baseline (V1) to **100.0%** (15/15, 95% Wilson CI [79.6%–100.0%]) in V6. Tool call accuracy is N/A for V1 and V2 (no tools defined), and rises from **86.7%** (13/15, [62.1%–96.3%]) in V3 to **100.0%** (15/15, [79.6%–100.0%]) in V6. Observed hallucination decreased from **20.0%** (3/15, [7.0%–45.2%]) to **0.0%** (0/15, [0.0%–20.4%]) in V6.
 
+### 🎓 Course Project Output & Outcome Matrix (15-Mark Rubric: CO1–CO6)
+
+| Rubric Criterion & Marks | Course Outcomes | Project Output (Tangible Repo Artifacts) | Project Outcome (Measured Empirical Results) |
+|:---|:---:|:---|:---|
+| **Criterion 1: Problem Definition & Use Case** (2 Marks) | **CO1, CO6** | • `docs/REPORT.md` §1 & §6.0<br>• `data/shopease.db` (21 orders, 15 products)<br>• `data/policy.md` (retail store policies) | Defined domain boundaries, threat model (unauthorized disclosure, hallucinations, prompt injection), and 4 quantifiable targets ($\ge 85\%$ success, $0.0\%$ hallucination, $100\%$ auth refusal). |
+| **Criterion 2: Prompt Design & Techniques** (4 Marks) | **CO4, CO6** | • `prompts/v1.md` through `v6.md`<br>• `prompts/evaluation_log.md`<br>• Compact schemas in `llm_client.py` | Systematic progression: V1 Zero-shot $\rightarrow$ V2 Persona/Rules $\rightarrow$ V3 Few-shot JSON $\rightarrow$ V4 Step-by-step CoT $\rightarrow$ V5 Multi-step ReAct loop $\rightarrow$ V6 bi-gram TF-IDF RAG + ReAct. Compact tool definitions reduced token consumption by 52.6% (639 tokens). |
+| **Criterion 3: Model, API & Parameter Configuration** (2 Marks) | **CO2, CO5** | • `llm_client.py` multi-provider router<br>• `eval/param_test.py`<br>• `eval/param_results.csv`<br>• `eval/param_results_topp.csv` | Benchmarked temperature sweep ($T=0.0, 0.3, 0.7$) showing $T=0.3$ is optimal (100% success vs 60% at $T=0.7$). Benchmarked nucleus sampling ($p=0.5, 0.9, 1.0$) on OpenRouter Llama 3.3 70B across 45 live runs ($p=0.90$ achieved 100% tool accuracy). |
+| **Criterion 4: Implementation & Demo** (3 Marks) | **CO1, CO4** | • `app.py` (4 Gradio tabs)<br>• `tools.py` (10 tools, SQLite ACID transactions)<br>• `security.py` (4 guardrails)<br>• 78/78 passing unit tests | Fully operational web app with 4 tabs (Chat, Prompt Inspector, Evaluation Dashboard, A/B Arena). ACID concurrency guarantees zero overselling. 78 unit tests passing monotonically. Clean demo state reseedable via `scripts/reset_demo_db.py`. |
+| **Criterion 5: Prompt Evaluation, Results & Limitations** (2 Marks) | **CO5, CO6** | • `eval/results.csv` (V1–V6)<br>• `eval/bias_results.csv` (5 pairs)<br>• `eval/heldout_results.csv` (v1)<br>• `eval/heldout_v2_results.csv` (v2)<br>• `eval/eval_charts.png` | V6 achieved 100.0% task success (15/15), 100.0% tool accuracy, and 0.0% hallucination. Demographic/tone fairness verified EQUIVALENT across 5 pairs. Held-Out v1 (57.1% success due to auth refusal) and v2 (90.0% success, 0% hallucination across 20 queries). Pooled hallucination 0.0% (0/56). |
+| **Criterion 6: Report & Presentation** (2 Marks) | **CO6** | • `README.md`<br>• `docs/REPORT.md`<br>• `docs/PRESENTATION_OUTLINE.md`<br>• `docs/VERIFICATION_REPORT.md`<br>• `docs/CHANGELOG_AUDIT.md` | Comprehensive 10-section project report, 8-slide presentation deck with detailed speaker notes, complete test verification report with monotonic terminal logs, and audit changelog with 0 contradictions. |
+
 ---
 
-## 2. Approach & System Architecture
+## 2. Approach & System Architecture [CO1, CO4]
 
 ShopEase AI bridges the gap between probabilistic generative text and deterministic business data through three architectural pillars: an autonomous ReAct loop, a bi-gram TF-IDF RAG retrieval engine, and stateful tool integration.
 
@@ -107,7 +118,7 @@ For general store queries regarding shipping fees, return windows, warranty term
 
 ---
 
-## 3. Prompt Design & Iterative Progression (V1 through V6)
+## 3. Prompt Design & Iterative Progression (V1 through V6) [CO4, CO6]
 
 The core intellectual contribution of this project is the **systematic, test-driven evolution of prompts**. Each version V1 through V6 was engineered to resolve specific, documented failures observed in the prior version.
 
@@ -171,7 +182,7 @@ The core intellectual contribution of this project is the **systematic, test-dri
 
 ---
 
-## 4. Model Setup & Hyperparameter Analysis
+## 4. Model Setup & Hyperparameter Analysis [CO2, CO5]
 
 ### 4.1 Inference Engine Configurations
 ShopEase AI supports multi-provider inference configured via environment variables and runtime selectors in `llm_client.py` and `prompts/builder.py`:
@@ -186,6 +197,9 @@ ShopEase AI supports multi-provider inference configured via environment variabl
 
 ### Why Groq is the Default Engine
 In a ReAct architecture, a single user turn may require multiple sequential LLM calls (e.g. Turn 1 Thought/Action $\rightarrow$ Observation $\rightarrow$ Turn 2 Thought/Action $\rightarrow$ Observation $\rightarrow$ Finish). Groq's custom LPU hardware delivers inference speeds averaging **~775 ms per step**, keeping measured median end-to-end user latency across the 15 benchmark queries at **1,550 ms**.
+
+### Open-Source Model Scaling Rationale
+While the course project specification (`IA3 project -ideas.docx`, Project Idea #7) suggests lightweight open-source baselines (`Qwen2.5 3B`, `Llama 3.2 3B`), our multi-provider router (`llm_client.py`) scales up to instruction-tuned Qwen (`qwen/qwen3.8-27b`) on Groq and Llama 3.3 70B (`meta-llama/llama-3.3-70b-instruct`) on OpenRouter (alongside `gemini-2.5-flash` and `gpt-4o-mini`). This architectural scaling is deliberate: multi-step ReAct agent loops execute up to 5 sequential reasoning turns per customer interaction, requiring strictly valid JSON action payloads, exact argument types (`order_id`, `product_id`), and robust rejection of injection traps. Larger instruction-tuned models deliver near-deterministic tool-syntax adherence (100.0% tool accuracy on V6) while Groq's custom LPU hardware delivers ultra-fast generation (~775 ms/step), ensuring that end-to-end user latency remains responsive (1,550 ms) without sacrificing tool-calling integrity.
 
 ### 4.2 Empirical Temperature Sensitivity Experiment
 To quantitatively evaluate the impact of the temperature parameter, we implemented `eval/param_test.py` and executed the production V6 prompt across all 15 benchmark queries under $T=0.0$ and $T=0.7$ (compared against the default $T=0.3$):
@@ -219,7 +233,7 @@ Based on live telemetry captured by `telemetry.py`:
 
 ---
 
-## 5. Implementation & Stateful Tool Suite
+## 5. Implementation & Stateful Tool Suite [CO1, CO4]
 
 ShopEase AI moves beyond read-only mockups by implementing **stateful transactional tools** with live SQLite data persistence with ACID transactions (`BEGIN IMMEDIATE`) in `tools.py` backed by `data/shopease.db`.
 
@@ -251,7 +265,7 @@ The web application (`app.py`) provides four synchronized tabs:
 
 ---
 
-## 6. Evaluation & Empirical Results
+## 6. Evaluation & Empirical Results [CO5, CO6]
 
 ### 6.0 Success Criteria
 Defined prior to empirical testing, the project establishes four measurable success criteria for autonomous e-commerce customer support:
@@ -350,7 +364,7 @@ ORD1001 belongs to Alice Johnson. In unconstrained baselines, an agent's probabi
 
 ---
 
-## 7. Limitations & Threats to Validity
+## 7. Limitations & Threats to Validity [CO5, CO6]
 
 To adhere to rigorous scientific standards, we document several limitations inherent in the prototype:
 
@@ -376,7 +390,7 @@ To adhere to rigorous scientific standards, we document several limitations inhe
 
 ---
 
-## 8. Conclusion & Future Work
+## 8. Conclusion & Future Work [CO6]
 
 ### 8.1 Summary
 This project demonstrates that unconstrained LLM hallucinations in customer support can be systematically addressed through principled prompt engineering. By progressing from a zero-shot baseline (V1) through guardrailed personas (V2), in-context few-shot exemplars (V3), Chain-of-Thought decomposition (V4), autonomous ReAct loops (V5), and RAG knowledge grounding (V6), ShopEase AI achieved:

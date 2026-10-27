@@ -1,6 +1,6 @@
 # ShopEase AI — Customer Service Bot
 
-A modular, autonomous customer service prototype powered by **ReAct multi-step reasoning**, **Retrieval-Augmented Generation (RAG)**, and **systematic iterative prompt engineering** (V1–V6). Built with Gradio 6.x, multi-provider inference (Groq, OpenRouter [answered live requests as a fallback; not benchmarked], Google Gemini, OpenAI, Anthropic), and a live real-time evaluation and telemetry suite.
+A modular, autonomous customer service prototype powered by **ReAct multi-step reasoning**, **Retrieval-Augmented Generation (RAG)**, and **systematic iterative prompt engineering** (V1–V6). Built with Gradio 6.x, multi-provider inference (Groq, OpenRouter [Llama 3.3 70B], Google Gemini, OpenAI, Anthropic), and a live real-time evaluation and telemetry suite.
 
 ---
 
@@ -9,6 +9,19 @@ A modular, autonomous customer service prototype powered by **ReAct multi-step r
 In automated e-commerce support, unconstrained generative language models exhibit measurable grounding and hallucination failure modes: our zero-shot baseline (V1) produced ungrounded answers on 4/15 (26.7%) queries and hallucinated on 3/15 (20.0%), inventing non-existent order statuses or fabricating store policies when answering unconstrained from parametric memory. This behavior misinforms customers, increases dispute ticket escalations for human support teams, and creates financial liability through unauthorized refund promises. Large Language Models possess strong linguistic comprehension and empathetic conversational ability, but they require systematic prompt engineering—specifically structured role definitions, few-shot syntax guidance, chain-of-thought decomposition, tool interfaces, and retrieval grounding—to restrict their output strictly to verified business data.
 
 **Objective:** Improve task success and reliability on e-commerce order operations (enforcing mandatory ownership verification, preventing fabricated order statuses or policies), raising task success from **46.7%** (7/15, 95% Wilson CI [24.8%–69.9%]) in the zero-shot baseline (V1) to **100.0%** (15/15, 95% Wilson CI [79.6%–100.0%]) in V6. Tool call accuracy is N/A for V1 and V2 (no tools defined), and rises from **86.7%** (13/15, [62.1%–96.3%]) in V3 to **100.0%** (15/15, [79.6%–100.0%]) in V6. The observed hallucination rate dropped from **20.0%** (3/15, [7.0%–45.2%]) in V1 to **0.0%** (0/15, [0.0%–20.4%]) in V6 [95% Wilson CI: 0.0%–20.4%]. (Note: In an earlier manual log, Q01, Q04, Q07, and Q10 were labeled as passing based on surface fluency alone, with only Q05 flagged as hallucinating [73.3% / 6.7%]. Under rigorous unified ground-truth evaluation in `eval/scoring.py`, V1 fails 8 queries, yielding 46.7% task success and 20.0% hallucination).
+
+---
+
+## 🎓 Course Project Output & Outcome Matrix (15-Mark Rubric: CO1–CO6)
+
+| Rubric Criterion & Marks | Course Outcomes | Project Output (Tangible Repo Artifacts) | Project Outcome (Measured Empirical Results) |
+|:---|:---:|:---|:---|
+| **Criterion 1: Problem Definition & Use Case** (2 Marks) | **CO1, CO6** | • [`docs/REPORT.md`](docs/REPORT.md) §1 & §6.0<br>• [`data/shopease.db`](data/shopease.db) (21 orders, 15 products)<br>• [`data/policy.md`](data/policy.md) (retail policies) | Defined domain boundaries, threat model (unauthorized order disclosure, hallucinations, prompt injection), and 4 quantifiable targets ($\ge 85\%$ success, $0.0\%$ hallucination, $100\%$ auth refusal). |
+| **Criterion 2: Prompt Design & Techniques** (4 Marks) | **CO4, CO6** | • [`prompts/v1.md`](prompts/v1.md) through [`v6.md`](prompts/v6.md)<br>• [`prompts/evaluation_log.md`](prompts/evaluation_log.md)<br>• Compact schemas in [`llm_client.py`](llm_client.py) | Systematic progression: V1 Zero-shot $\rightarrow$ V2 Persona/Rules $\rightarrow$ V3 Few-shot JSON $\rightarrow$ V4 Step-by-step CoT $\rightarrow$ V5 Multi-step ReAct loop $\rightarrow$ V6 bi-gram TF-IDF RAG + ReAct. Compact tool definitions reduced token consumption by 52.6% (639 tokens). |
+| **Criterion 3: Model, API & Parameter Configuration** (2 Marks) | **CO2, CO5** | • [`llm_client.py`](llm_client.py) multi-provider router<br>• [`eval/param_test.py`](eval/param_test.py)<br>• [`eval/param_results.csv`](eval/param_results.csv)<br>• [`eval/param_results_topp.csv`](eval/param_results_topp.csv) | Benchmarked temperature sweep ($T=0.0, 0.3, 0.7$) showing $T=0.3$ is optimal (100% success vs 60% at $T=0.7$). Benchmarked nucleus sampling ($p=0.5, 0.9, 1.0$) on OpenRouter Llama 3.3 70B across 45 live runs ($p=0.90$ achieved 100% tool accuracy). |
+| **Criterion 4: Implementation & Demo** (3 Marks) | **CO1, CO4** | • [`app.py`](app.py) (4 Gradio tabs)<br>• [`tools.py`](tools.py) (10 tools, SQLite ACID transactions)<br>• [`security.py`](security.py) (4 guardrails)<br>• 78/78 passing unit tests | Fully operational web app with 4 tabs (Chat, Prompt Inspector, Evaluation Dashboard, A/B Arena). ACID concurrency guarantees zero overselling. 78 unit tests passing monotonically. Clean demo state reseedable via [`scripts/reset_demo_db.py`](scripts/reset_demo_db.py). |
+| **Criterion 5: Prompt Evaluation, Results & Limitations** (2 Marks) | **CO5, CO6** | • [`eval/results.csv`](eval/results.csv) (V1–V6)<br>• [`eval/bias_results.csv`](eval/bias_results.csv) (5 pairs)<br>• [`eval/heldout_results.csv`](eval/heldout_results.csv) (v1)<br>• [`eval/heldout_v2_results.csv`](eval/heldout_v2_results.csv) (v2)<br>• `eval/eval_charts.png` | V6 achieved 100.0% task success (15/15), 100.0% tool accuracy, and 0.0% hallucination. Demographic/tone fairness verified EQUIVALENT across 5 pairs. Held-Out v1 (57.1% success due to auth refusal) and v2 (90.0% success, 0% hallucination across 20 queries). Pooled hallucination 0.0% (0/56). |
+| **Criterion 6: Report & Presentation** (2 Marks) | **CO6** | • [`README.md`](README.md)<br>• [`docs/REPORT.md`](docs/REPORT.md)<br>• [`docs/PRESENTATION_OUTLINE.md`](docs/PRESENTATION_OUTLINE.md)<br>• [`docs/VERIFICATION_REPORT.md`](docs/VERIFICATION_REPORT.md)<br>• [`docs/CHANGELOG_AUDIT.md`](docs/CHANGELOG_AUDIT.md) | Comprehensive 10-section project report, 8-slide presentation deck with detailed speaker notes, complete test verification report with monotonic terminal logs, and audit changelog with 0 contradictions. |
 
 ---
 
@@ -321,10 +334,10 @@ Use this script to demonstrate the prototype during evaluation or grading (all n
 
 ## 🧪 Testing & Verification
 
-Comprehensive end-to-end audit details and ground-truth validation are documented in the [End-to-End Test & Verification Report](docs/VERIFICATION_REPORT.md) (75/75 tests passing, database isolation, and benchmark synchronization).
+Comprehensive end-to-end audit details and ground-truth validation are documented in the [End-to-End Test & Verification Report](docs/VERIFICATION_REPORT.md) (78/78 tests passing, database isolation, and benchmark synchronization).
 
 ```bash
-# Run unit test suite (75 tests total across test_react.py, test_security.py, test_cases.py, and test_llm_fallback.py; 67 distinct unit behaviors)
+# Run unit test suite (78 tests total across test_react.py, test_security.py, test_cases.py, and test_llm_fallback.py; 70 distinct unit behaviors)
 pytest -v
 
 # Run temperature parameter experiment
@@ -344,7 +357,7 @@ python scripts/reset_demo_db.py
 
 ## 📄 Documentation & Project Deliverables
 
-* **🛡️ End-to-End Test & Verification Report**: [docs/VERIFICATION_REPORT.md](docs/VERIFICATION_REPORT.md) (Comprehensive 75/75 unit test verification, database isolation proof, ACID transaction checks, and benchmark alignment).
+* **🛡️ End-to-End Test & Verification Report**: [docs/VERIFICATION_REPORT.md](docs/VERIFICATION_REPORT.md) (Comprehensive 78/78 unit test verification, database isolation proof, ACID transaction checks, and benchmark alignment).
 * **📸 Screenshots Guide & Visual Evidence**: [docs/screenshots/README.md](docs/screenshots/README.md) (Detailed specifications, captures, and UI guide for Chat, ReAct Trace, Inspector, and Eval Dashboard).
 * **📖 Comprehensive Project Report**: [docs/REPORT.md](docs/REPORT.md) (10 sections covering Abstract, Architecture, Prompt Progression, Implementation, Evaluation, Limitations, and Future Work).
 * **🎤 Presentation Slide Outline**: [docs/PRESENTATION_OUTLINE.md](docs/PRESENTATION_OUTLINE.md) (8-slide deck with bullet points and detailed speaker notes).

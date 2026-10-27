@@ -1,12 +1,11 @@
 # ShopEase AI — Course Presentation Outline
 
 **Project:** Autonomous Customer Service Agent with ReAct Reasoning, RAG Grounding, and Prompt Engineering Progression (V1–V6)  
-**Target Duration:** 8–10 Minutes (6–8 Slides)  
 **Presenter:** Student Developer / Course Candidate  
 
 ---
 
-## Slide 1: Problem Definition & Motivation
+## Slide 1: Problem Definition & Motivation [CO1, CO6]
 
 ### Title: The Customer Support Hallucination Dilemma
 * **Unconstrained LLMs Invent Facts:** Zero-shot generative models hallucinate fake order statuses, make up non-existent tracking IDs (e.g., `TRK-MADE-UP`), and invent return policies.
@@ -19,7 +18,7 @@
 
 ---
 
-## Slide 2: System Architecture & Execution Loop
+## Slide 2: System Architecture & Execution Loop [CO1, CO4]
 
 ### Title: Architecture — Dynamic ReAct & RAG Loop
 * **Multi-Provider Backend:** Primary inference on Groq (`qwen/qwen3.8-27b`) for low latency (~775ms/step, median end-to-end V6 latency 1,550 ms), backed by OpenRouter (Llama 3.3 70B), Gemini 2.5 Flash, Anthropic Claude Sonnet 4, and OpenAI GPT-4o-mini fallbacks.
@@ -32,7 +31,7 @@
 
 ---
 
-## Slide 3: Iterative Prompt Engineering Progression (V1 $\rightarrow$ V6)
+## Slide 3: Iterative Prompt Engineering Progression (V1 $\rightarrow$ V6) [CO4, CO6]
 
 ### Title: Systematic Progression Across 6 Prompt Generations
 * **V1 (Naive Zero-Shot):** Baseline. 46.7% task success (7/15) [24.8%–69.9%], 20.0% hallucination rate (3/15) [7.0%–45.2%], 26.7% ungrounded (4/15); failed due to missing tools and generic apologies.
@@ -47,7 +46,7 @@
 
 ---
 
-## Slide 4: Empirical Benchmark Results
+## Slide 4: Empirical Benchmark Results [CO5, CO6]
 
 ### Title: Empirical Evaluation Metrics (15 Curated Test Queries)
 * **Task Success:** Scaled from **46.7% (7/15)** in V1 $\rightarrow$ **80.0% (12/15)** in V2 $\rightarrow$ **86.7% (13/15)** in V3/V4 $\rightarrow$ **93.3% (14/15)** in V5 $\rightarrow$ **100.0% (15/15)** in V6.
@@ -62,7 +61,7 @@
 
 ---
 
-## Slide 5: Live Demonstration & Real-Time Telemetry
+## Slide 5: Live Demonstration & Real-Time Telemetry [CO1, CO4]
 
 ### Title: Interactive System Walkthrough
 * **Order Tracking & Action Chaining:** User inquires about order `ORD1002`; bot invokes `get_order_status` and provides real delivery date and tracking badge.
@@ -76,7 +75,7 @@
 
 ---
 
-## Slide 6: Parameter Sensitivity & Fairness Evaluation
+## Slide 6: Parameter Sensitivity & Fairness Evaluation [CO2, CO5]
 
 ### Title: Temperature Tuning and Bias Robustness
 * **Temperature Sensitivity ($T=0.0$ vs $0.3$ vs $0.7$):**
@@ -90,14 +89,12 @@
   * **Linguistic Register (PAIR-04):** Formal vs slang: **EQUIVALENT** (both prompted for identity verification on Groq, ensuring consistent authorization enforcement).
   * **Gender on Policy (PAIR-05):** Female vs Male: **EQUIVALENT** (both executed `search_policy` with identical warranty policy retrieval on Groq).
 
-
-
 > **Speaker Notes:**  
 > "We also evaluated hyperparameter sensitivity and demographic bias. In our temperature experiment, $T=0.3$ provided the best empirical balance, edging out $T=0.0$ by a single query (15/15 vs 14/15) while maintaining responsive 1,550 ms latency. At $T=0.7$, tool accuracy degraded to 53.3% and success fell to 60.0% due to syntax drift. In our bias experiment, all 5 paired dimensions demonstrated EQUIVALENT behavior on Groq, with deterministic identity verification protecting unauthorized access regardless of customer demographics or tone."
 
 ---
 
-## Slide 7: Limitations & Threats to Validity
+## Slide 7: Limitations & Threats to Validity [CO5, CO6]
 
 ### Title: Engineering Limitations & Real-World Constraints
 * **Evaluation Sample Size:** The benchmark suite contains 15 curated queries. While representative of core edge cases, each query represents 6.7 percentage points; 95% Wilson CI for 15/15 is [79.6%–100.0%].
@@ -112,7 +109,7 @@
 
 ---
 
-## Slide 8: Conclusion & Future Roadmap
+## Slide 8: Conclusion & Future Roadmap [CO6]
 
 ### Title: Summary & Future Directions
 * **Key Conclusion:** Prompt engineering is an empirical discipline. Role definition, few-shot syntax guidance, Chain-of-Thought decomposition, and RAG grounding are complementary pillars required to build safe autonomous agents.

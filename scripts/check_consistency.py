@@ -139,7 +139,7 @@ def check_documents():
     
     # Assert UI-facing V6 task success and hallucination are 93.3% and 6.7%
     assert kpis["v6_success_pct"] == 93.3, f"UI V6 success {kpis['v6_success_pct']} != 93.3"
-    assert kpis["v6_tool_pct"] == 93.3, f"UI V6 tool acc {kpis['v6_tool_pct']} != 93.3"
+    assert kpis["v6_tool_pct"] == 86.7, f"UI V6 tool acc {kpis['v6_tool_pct']} != 86.7"
     assert kpis["v6_halluc_pct"] == 6.7, f"UI V6 hallucination {kpis['v6_halluc_pct']} != 6.7"
 
     # 14. Check README prompt refinement table matches UI-facing numbers (must NOT claim 100% in refinement table)

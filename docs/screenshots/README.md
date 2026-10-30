@@ -43,4 +43,4 @@ When daily Groq quota resets (or using paid credits):
    - Prompt dropdown displays `V6 — RAG + ReAct`.
    - Provider footer confirms `Groq (qwen/qwen3.8-27b)`.
    - Zero `DEMO` badges visible.
-   - Evaluation dashboard KPI cards and charts match canonical CSV benchmarks (93% Task Success, 93% Tool Accuracy, 6.7% Hallucination).
+   - Evaluation dashboard KPI cards and charts match canonical CSV benchmarks (93.3% Task Success, 86.7% Tool Accuracy, 6.7% Hallucination).

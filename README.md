@@ -171,7 +171,7 @@ ShopEase AI implements defense-in-depth security controls across the application
 | **V1 — Naive** | Groq (10) / OpenRouter (5) | $T = 0.7$ / $T = 0.3$ | 15 |
 | **V2 — Role + Rules** | Groq | $T = 0.5$ | 15 |
 | **V3 — Few-Shot** | Groq | $T = 0.3$ | 15 |
-| **V4 — CoT** | Groq | $T = 0.3$ | 15 |
+| **V4 — Chain-of-Thought (CoT)** | Groq | $T = 0.3$ | 15 |
 | **V5 — ReAct** | Groq | $T = 0.3$ | 15 |
 | **V6 — RAG + ReAct** | Groq | $T = 0.3$ | 15 |
 
@@ -182,7 +182,7 @@ ShopEase AI implements defense-in-depth security controls across the application
 | **V1 — Naive** | Zero-Shot Baseline | Unconstrained LLM. Bypasses tools; answers from parametric memory. | N/A | **20.0%** (3/15) [7.0%–45.2%] | **26.7%** (4/15) [10.9%–52.0%] | **0.0%** (0/15) | **46.7%** (7/15) [24.8%–69.9%] |
 | **V2 — Role + Rules** | Persona & Boundaries | Guardrailed tone; refuses adversarial order generation. Lacks tools. | N/A | **0.0%** (0/15) [0.0%–20.4%] | **26.7%** (4/15) [10.9%–52.0%] | **0.0%** (0/15) | **80.0%** (12/15) [54.8%–93.0%] |
 | **V3 — Few-Shot** | In-Context Exemplars | Teaches JSON tool-calling syntax via demonstrations. | **86.7%** (13/15) [62.1%–96.3%] | **6.7%** (1/15) [1.2%–29.8%] | **6.7%** (1/15) [1.2%–29.8%] | **0.0%** (0/15) | **86.7%** (13/15) [62.1%–96.3%] |
-| **V4 — CoT** | Step-by-Step CoT | Explicit category reasoning (14d electronics vs 30d general items). | **93.3%** (14/15) [70.2%–98.8%] | **13.3%** (2/15) [3.7%–37.9%] | **0.0%** (0/15) [0.0%–20.4%] | **0.0%** (0/15) | **86.7%** (13/15) [62.1%–96.3%] |
+| **V4 — Chain-of-Thought (CoT)** | Step-by-Step CoT | Explicit category reasoning (14d electronics vs 30d general items). | **93.3%** (14/15) [70.2%–98.8%] | **13.3%** (2/15) [3.7%–37.9%] | **0.0%** (0/15) [0.0%–20.4%] | **0.0%** (0/15) | **86.7%** (13/15) [62.1%–96.3%] |
 | **V5 — ReAct** | Multi-Step Action Loop | Chains tools sequentially across up to 5 loop iterations. | **80.0%** (12/15) [54.8%–93.0%] | **6.7%** (1/15) [1.2%–29.8%] | **13.3%** (2/15) [3.7%–37.9%] | **0.0%** (0/15) | **93.3%** (14/15) [70.2%–98.8%] |
 | **V6 — RAG + ReAct** | TF-IDF RAG + ReAct Loop | Injects live policy chunks into context with strict negative rules. | **93.3%** (14/15) [70.2%–98.8%] | **6.7%** (1/15) [1.2%–29.8%] | **0.0%** (0/15) [0.0%–20.4%] | **0.0%** (0/15)* | **93.3%** (14/15) [70.2%–98.8%] |
 

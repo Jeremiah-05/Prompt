@@ -175,5 +175,101 @@
     "tools_str": "list_products",
     "answer_preview": "Here are the electronics products available in our store: 1. UltraBook Pro 14 - \u20b91099.99 2...",
     "status": "\u2705 Success"
+  },
+  {
+    "id": "LIVE-012",
+    "time": "03:58:38",
+    "query": "Show me all electronics products available in your store.",
+    "full_query": "Show me all electronics products available in your store.",
+    "version": "V3",
+    "full_version": "V3 \u2014 Few-Shot",
+    "provider": "OPENROUTER",
+    "latency_ms": 29494,
+    "iterations": 2,
+    "tools_called": [
+      "list_products"
+    ],
+    "tools_str": "list_products",
+    "answer_preview": "We have 7 electronics products available: UltraBook Pro 14 (\u20b91,099.99, 12 in stock), Smart...",
+    "status": "\u2705 Success"
+  },
+  {
+    "id": "LIVE-013",
+    "time": "03:59:08",
+    "query": "Show me all electronics products available in your store.",
+    "full_query": "Show me all electronics products available in your store.",
+    "version": "V3",
+    "full_version": "V3 \u2014 Few-Shot",
+    "provider": "OPENROUTER",
+    "latency_ms": 23459,
+    "iterations": 2,
+    "tools_called": [
+      "list_products"
+    ],
+    "tools_str": "list_products",
+    "answer_preview": "We have 7 electronics products available: UltraBook Pro 14 (\u20b91,099.99, 12 in stock), Smart...",
+    "status": "\u2705 Success"
+  },
+  {
+    "id": "LIVE-014",
+    "time": "14:25:27",
+    "query": "Show me all electronics products available in your store.",
+    "full_query": "Show me all electronics products available in your store.",
+    "version": "V1",
+    "full_version": "V1 \u2014 Naive",
+    "provider": "GROQ",
+    "latency_ms": 787,
+    "iterations": 1,
+    "tools_called": [],
+    "tools_str": "None (Direct)",
+    "answer_preview": "I apologize, but I do not have access to your store's real-time inventory or product datab...",
+    "status": "\u2705 Success"
+  },
+  {
+    "id": "LIVE-015",
+    "time": "14:25:52",
+    "query": "Show me all electronics products available in your store.",
+    "full_query": "Show me all electronics products available in your store.",
+    "version": "V6",
+    "full_version": "V6 \u2014 RAG + ReAct",
+    "provider": "GROQ",
+    "latency_ms": 2014,
+    "iterations": 2,
+    "tools_called": [
+      "list_products"
+    ],
+    "tools_str": "list_products",
+    "answer_preview": "Here are all **7 electronics** products currently in stock: | # | Product | Price | Stock ...",
+    "status": "\u2705 Success"
+  },
+  {
+    "id": "LIVE-016",
+    "time": "15:37:09",
+    "query": "What is your warranty and return window policy for electronics?",
+    "full_query": "What is your warranty and return window policy for electronics?",
+    "version": "V2",
+    "full_version": "V2 \u2014 Role + Rules",
+    "provider": "GROQ",
+    "latency_ms": 731,
+    "iterations": 1,
+    "tools_called": [],
+    "tools_str": "None (Direct)",
+    "answer_preview": "I don\u2019t have the specific warranty or return window details for electronics in my current ...",
+    "status": "\u2705 Success"
+  },
+  {
+    "id": "LIVE-017",
+    "time": "16:39:54",
+    "query": "I would like to return the Denim Jacket from order ORD1008.",
+    "full_query": "I would like to return the Denim Jacket from order ORD1008.",
+    "version": "V2",
+    "full_version": "V2 \u2014 Role + Rules",
+    "provider": "OPENROUTER",
+    "latency_ms": 4018,
+    "iterations": 1,
+    "tools_called": [],
+    "tools_str": "None (Direct)",
+    "answer_preview": "I can help initiate the return for the Denim Jacket from order **ORD1008**. To proceed, pl...",
+    "status": "\u2705 Success"
   }
 ]

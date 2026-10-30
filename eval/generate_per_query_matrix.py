@@ -17,7 +17,7 @@ with open(RESULTS_CSV, "r", encoding="utf-8") as f:
 with open(CASES_JSON, "r", encoding="utf-8") as f:
     cases = {c["id"]: c for c in json.load(f)}
 
-versions = ["V1 — Naive", "V2 — Role + Rules", "V3 — Few-Shot", "V4 — CoT", "V5 — ReAct", "V6 — RAG + ReAct"]
+versions = ["V1 — Naive", "V2 — Role + Rules", "V3 — Few-Shot", "V4 — Chain-of-Thought (CoT)", "V5 — ReAct", "V6 — RAG + ReAct"]
 qids = [f"Q{i:02d}" for i in range(1, 16)]
 
 matrix = {}
@@ -26,6 +26,8 @@ for q in qids:
 
 for r in rows:
     v = r["version"]
+    if v.startswith("V4"):
+        v = "V4 — Chain-of-Thought (CoT)"
     q = r["query_id"]
     if v in versions and q in qids:
         succ = int(r.get("task_success", 0))

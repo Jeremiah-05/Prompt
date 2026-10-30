@@ -13,28 +13,43 @@ PROMPT_VERSIONS = {
     "V1 — Naive": "v1.md",
     "V2 — Role + Rules": "v2.md",
     "V3 — Few-Shot": "v3.md",
-    "V4 — CoT": "v4.md",
-    "V4 — Chain-of-Thought": "v4.md",
+    "V4 — Chain-of-Thought (CoT)": "v4.md",
     "V5 — ReAct": "v5.md",
     "V6 — RAG + ReAct": "v6.md",
 }
 
-# Legacy fallback mapping
+# Legacy fallback mapping and aliases (ensures both legacy V4 labels resolve to existing v4 template)
 LEGACY_PROMPT_VERSIONS = {
     "V1 — Naive": "v1_naive.md",
     "V2 — Role + Rules": "v2_role_rules.md",
     "V3 — Few-Shot": "v3_fewshot.md",
+    "V4 — Chain-of-Thought (CoT)": "v4_cot.md",
     "V4 — CoT": "v4_cot.md",
     "V4 — Chain-of-Thought": "v4_cot.md",
     "V5 — ReAct": "v5_react.md",
     "V6 — RAG + ReAct": "v6_rag_react.md",
 }
 
+# Aliases mapping legacy or alternative labels to the canonical version
+VERSION_ALIASES = {
+    "V4 — CoT": "V4 — Chain-of-Thought (CoT)",
+    "V4 — Chain-of-Thought": "V4 — Chain-of-Thought (CoT)",
+    "V4": "V4 — Chain-of-Thought (CoT)",
+}
+
+def resolve_version_key(version: str) -> str:
+    """Normalize version string or alias to canonical version key."""
+    if not version:
+        return version
+    v_clean = version.strip()
+    return VERSION_ALIASES.get(v_clean, v_clean)
+
 # Recommended temperature per version
 RECOMMENDED_TEMPS = {
     "V1 — Naive": 0.7,
     "V2 — Role + Rules": 0.5,
     "V3 — Few-Shot": 0.3,
+    "V4 — Chain-of-Thought (CoT)": 0.3,
     "V4 — CoT": 0.3,
     "V4 — Chain-of-Thought": 0.3,
     "V5 — ReAct": 0.3,
@@ -211,7 +226,13 @@ def parse_prompt_file(filepath: Path) -> tuple[dict, str]:
 
 def load_prompt_frontmatter(version: str) -> dict:
     """Load metadata front-matter for a prompt version."""
-    filename = PROMPT_VERSIONS.get(version) or LEGACY_PROMPT_VERSIONS.get(version)
+    v = resolve_version_key(version)
+    filename = (
+        PROMPT_VERSIONS.get(v)
+        or PROMPT_VERSIONS.get(version)
+        or LEGACY_PROMPT_VERSIONS.get(v)
+        or LEGACY_PROMPT_VERSIONS.get(version)
+    )
     if not filename:
         raise ValueError(f"Unknown prompt version: {version}. Available: {list(PROMPT_VERSIONS.keys())}")
     filepath = PROMPTS_DIR / filename
@@ -221,10 +242,11 @@ def load_prompt_frontmatter(version: str) -> dict:
 
 def load_prompt_template(version: str) -> str:
     """Load prompt template body from .md file, stripping front-matter or comments."""
-    filename = PROMPT_VERSIONS.get(version)
+    v = resolve_version_key(version)
+    filename = PROMPT_VERSIONS.get(v) or PROMPT_VERSIONS.get(version)
     filepath = PROMPTS_DIR / filename if filename else None
     if not filepath or not filepath.exists():
-        filename = LEGACY_PROMPT_VERSIONS.get(version)
+        filename = LEGACY_PROMPT_VERSIONS.get(v) or LEGACY_PROMPT_VERSIONS.get(version)
         filepath = PROMPTS_DIR / filename if filename else None
 
     if not filepath or not filepath.exists():
@@ -407,4 +429,5 @@ def list_versions() -> list[str]:
 
 def get_recommended_temp(version: str) -> float:
     """Get recommended temperature for a prompt version."""
-    return RECOMMENDED_TEMPS.get(version, 0.3)
+    v = resolve_version_key(version)
+    return RECOMMENDED_TEMPS.get(v, RECOMMENDED_TEMPS.get(version, 0.3))

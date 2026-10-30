@@ -103,7 +103,7 @@ VERSION_INTEL = {
         "desc": "Adds 3 few-shot customer support dialogues teaching the model exact JSON tool-calling syntax and refund calculation formats.",
         "tags": ["✅ Tool Call Format", "✅ Valid JSON", "⚡ ~75% Tool Accuracy"],
     },
-    "V4 — CoT": {
+    "V4 — Chain-of-Thought (CoT)": {
         "badge": "🧠 Chain-of-Thought (CoT)",
         "color": "#8b5cf6",
         "desc": "Requires explicit step-by-step deduction before answering (e.g. checking delivery date vs 30-day window, non-returnable categories).",
@@ -122,6 +122,9 @@ VERSION_INTEL = {
         "tags": ["🛡️ 0.0% Hallucination [0.0%–20.4%]", "🎯 100.0% Tool Acc [79.6%–100.0%]", "✅ Verified Grounding"],
     },
 }
+# Legacy aliases for backwards compatibility
+VERSION_INTEL["V4 — CoT"] = VERSION_INTEL["V4 — Chain-of-Thought (CoT)"]
+VERSION_INTEL["V4 — Chain-of-Thought"] = VERSION_INTEL["V4 — Chain-of-Thought (CoT)"]
 
 def render_version_card(version_name: str) -> str:
     """Generate HTML preview card for the selected prompt version."""
@@ -595,7 +598,7 @@ def generate_eval_charts():
         if v.startswith("V1"): return "V1 — Naive"
         if v.startswith("V2"): return "V2 — Role + Rules"
         if v.startswith("V3"): return "V3 — Few-Shot"
-        if v.startswith("V4"): return "V4 — CoT"
+        if v.startswith("V4"): return "V4 — Chain-of-Thought (CoT)"
         if v.startswith("V5"): return "V5 — ReAct"
         if v.startswith("V6"): return "V6 — RAG + ReAct"
         return v
@@ -624,7 +627,7 @@ def generate_eval_charts():
     
     CANONICAL_VERSIONS = [
         "V1 — Naive", "V2 — Role + Rules", "V3 — Few-Shot",
-        "V4 — CoT", "V5 — ReAct", "V6 — RAG + ReAct"
+        "V4 — Chain-of-Thought (CoT)", "V5 — ReAct", "V6 — RAG + ReAct"
     ]
     versions = [v for v in CANONICAL_VERSIONS if v in version_metrics]
     avg = lambda lst: sum(lst) / len(lst) if lst else 0
@@ -1301,7 +1304,7 @@ def build_ui() -> gr.Blocks:
                 
                 with gr.Row():
                     bench_version_selector = gr.Dropdown(
-                        choices=["V6 — RAG + ReAct", "V5 — ReAct", "V4 — CoT", "V3 — Few-Shot", "V2 — Role + Rules", "V1 — Naive", "All Versions (V1–V6)"],
+                        choices=["V6 — RAG + ReAct", "V5 — ReAct", "V4 — Chain-of-Thought (CoT)", "V3 — Few-Shot", "V2 — Role + Rules", "V1 — Naive", "All Versions (V1–V6)"],
                         value="V6 — RAG + ReAct",
                         label="Target Prompt Version",
                         scale=2,

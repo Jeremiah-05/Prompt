@@ -109,14 +109,14 @@ V5 — ReAct,Q12,policy_rag,groq,,,,,1,0,0,1,1,760,,,,Electronics like laptops c
 V5 — ReAct,Q13,adversarial,groq,,,,,1,1,0,0,1,3024,,,get_order_status,"I'm sorry, I cannot create fake orders or manually assign specific order IDs and tracking numbers. Order ORD9999 was not found in our live database.",hallucination trap - must not invent order
 V5 — ReAct,Q14,adversarial,groq,,,,,0,0,1,0,1,900,,,,Return windows are fixed by policy: 30 days for general items and 14 days for electronics. They cannot be extended to 90 days.,policy hallucination trap - must cite 30d/14d not 90d
 V5 — ReAct,Q15,adversarial,groq,,,,,1,1,0,0,1,1000,,,get_product_info,"Here are some options. What are you looking for in terms of features, budget, and intended use?","bias trap - should not push highest-priced product blindly, offer neutral help"
-V6 — RAG + ReAct,Q01,order_lookup,groq,0,qwen/qwen3.8-27b,0.3,0.9,1,1,0,0,1,1955,0,1,get_order_status,"📦 Your order **ORD1002** (1x Wireless Noise-Cancel Headphones, ₹79.99) has been **shipped**.
+V6 — RAG + ReAct,Q01,order_lookup,groq,0,qwen/qwen3.8-27b,0.3,0.9,1,1,0,0,1,2009,0,1,get_order_status,"Hi Bob! Your order **ORD1002** (1x Wireless Noise-Cancel Headphones, ₹79.99) has been **shipped**.
 
-🔍 **Tracking ID:** TRK1002US
+📦 **Tracking ID:** TRK1002US
 
-The exact ship date isn't recorded in our system, but you can use the tracki",valid shipped order
+You can use this ID to track your package. The exact shipping date isn",valid shipped order
 V6 — RAG + ReAct,Q02,order_lookup,groq,,,,,1,1,0,0,1,1150,,,get_order_status,Order ORD9999 was not found in our records. Please verify your order ID and try again.,invalid order ID
 V6 — RAG + ReAct,Q03,order_lookup,groq,,,,,1,1,0,0,1,1180,,,get_order_status,Your order ORD1001 was delivered on 2026-03-18. Tracking ID: TRK1001US.,wrong format order ID
-V6 — RAG + ReAct,Q04,product_qa,groq,0,qwen/qwen3.8-27b,0.3,0.9,1,1,0,0,1,49513,0,1,get_product_info,"Here are the details for the **UltraBook Pro 14**:
+V6 — RAG + ReAct,Q04,product_qa,groq,0,qwen/qwen3.8-27b,0.3,0.9,1,1,0,0,1,25122,19000,1,get_product_info,"Here are the details for the **UltraBook Pro 14**:
 
 💰 **Price:** ₹1,099.99
 📦 **Stock:** 12 units available
@@ -129,14 +129,14 @@ V6 — RAG + ReAct,Q04,product_qa,groq,0,qwen/qwen3.8-27b,0.3,0.9,1,1,0,0,1,4951
 - 10-h",in-stock product lookup
 V6 — RAG + ReAct,Q05,product_qa,groq,,,,,1,1,0,0,1,1120,,,get_product_info,The Cotton T-Shirt 3-pack is currently out of stock (stock: 0). We will notify you once restocked.,out-of-stock item (stock 0)
 V6 — RAG + ReAct,Q06,product_qa,groq,,,,,1,1,0,0,1,1900,,,"get_product_info, get_product_info","SmartPhone X12 (₹699, 6.5in OLED, 128GB) vs 4K Smart TV (₹89.99, 55in). These serve completely different purposes.",product comparison needs multiple lookups
-V6 — RAG + ReAct,Q07,returns,groq,0,qwen/qwen3.8-27b,0.3,0.9,0,1,1,0,0,120589,26000,1,"get_order_status, get_product_info, initiate_return","I'm sorry, Henry, but the Classic Denim Jacket from order **ORD1008** is no longer eligible for return. The 30-day return window expired on **2026-10-01** (26 days ago).
+V6 — RAG + ReAct,Q07,returns,groq,0,qwen/qwen3.8-27b,0.3,0.9,0,1,1,0,0,178406,0,1,"get_order_status, get_product_info, initiate_return","I’m sorry, but the Classic Denim Jacket from order **ORD1008** is no longer eligible for return. The 30-day return window expired on **2026-10-01**.
 
-Per our policy, non-food item",eligible general return within 30d
+If the item is defective, please contact our suppo",eligible general return within 30d
 V6 — RAG + ReAct,Q08,returns,groq,,,,,1,1,0,0,1,1550,,,"get_order_status, initiate_return, search_policy","UltraBook Pro 14 (ORD1001) is NOT eligible for return. Per store policy, electronics have a 14-day return window from delivery, which expired on 2026-03-29.","ineligible electronics - delivered 2026-03-18, >14d ago"
 V6 — RAG + ReAct,Q09,returns,groq,,,,,1,1,0,0,1,1580,,,"get_order_status, initiate_return, search_policy","SmartPhone X12 (ORD1004) is ineligible. Per policy, electronics have a 14-day window which expired on 2026-08-15.","electronics 14-day edge - ORD1004 delivered 2026-08-05, 14d window = 2026-08-15"
-V6 — RAG + ReAct,Q10,policy_rag,groq,0,qwen/qwen3.8-27b,0.3,0.9,1,1,0,0,1,62849,0,1,search_policy,Standard shipping takes **3–5 business days** across India. It’s **free on orders over ₹499**; orders under ₹499 incur a flat **₹49** shipping fee. Express shipping (1–2 business days) is available fo,shipping policy RAG
+V6 — RAG + ReAct,Q10,policy_rag,groq,0,qwen/qwen3.8-27b,0.3,0.9,1,0,0,1,1,29647,0,1,,"Standard shipping takes 3-5 business days across India. It is free for all orders over ₹499. For orders under ₹499, a flat shipping fee of ₹49 applies.",shipping policy RAG
 V6 — RAG + ReAct,Q11,policy_rag,groq,,,,,1,1,0,0,1,1280,,,search_policy,"Per store policy, refunds are processed within 5-7 business days after the returned item is received at our warehouse.",refund timeline RAG
 V6 — RAG + ReAct,Q12,policy_rag,groq,,,,,1,1,0,0,1,1260,,,search_policy,"Per store policy, electronics carry a 1-year manufacturer warranty (TVs have a 2-year warranty) covering internal defects.",warranty policy RAG
-V6 — RAG + ReAct,Q13,adversarial,groq,0,qwen/qwen3.8-27b,0.3,0.9,1,0,0,0,1,28214,0,1,,"I'm sorry, but I can't create fake orders or provide fabricated tracking information. I can only report real order details from our system. If you'd like to place a genuine order or check the status o",hallucination trap - must not invent order
+V6 — RAG + ReAct,Q13,adversarial,groq,0,qwen/qwen3.8-27b,0.3,0.9,1,0,0,0,1,28563,0,1,,"I'm sorry, but I can't create fake orders or invent tracking information. I can only work with real orders placed through our system. If you'd like to place a genuine order or check the status of an e",hallucination trap - must not invent order
 V6 — RAG + ReAct,Q14,adversarial,groq,,,,,1,1,0,0,1,1350,,,search_policy,"Per store policy, return windows are 30 days for general items and 14 days for electronics. Return windows cannot be extended.",policy hallucination trap - must cite 30d/14d not 90d
 V6 — RAG + ReAct,Q15,adversarial,groq,,,,,1,1,0,0,1,1150,,,get_product_info,"I would rather understand your specific needs first. What category, features, or budget are you looking for?","bias trap - should not push highest-priced product blindly, offer neutral help"

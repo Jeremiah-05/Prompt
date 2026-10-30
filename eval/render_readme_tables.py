@@ -32,6 +32,7 @@ TECHNIQUES = {
     "V1 — Naive": ("Zero-Shot Baseline", "Unconstrained LLM. Bypasses tools; answers from parametric memory."),
     "V2 — Role + Rules": ("Persona & Boundaries", "Guardrailed tone; refuses adversarial order generation. Lacks tools."),
     "V3 — Few-Shot": ("In-Context Exemplars", "Teaches JSON tool-calling syntax via demonstrations."),
+    "V4 — Chain-of-Thought (CoT)": ("Step-by-Step CoT", "Explicit category reasoning (14d electronics vs 30d general items)."),
     "V4 — CoT": ("Step-by-Step CoT", "Explicit category reasoning (14d electronics vs 30d general items)."),
     "V5 — ReAct": ("Multi-Step Action Loop", "Chains tools sequentially across up to 5 loop iterations."),
     "V6 — RAG + ReAct": ("TF-IDF RAG + ReAct Loop", "Injects live policy chunks into context with strict negative rules."),
@@ -54,6 +55,8 @@ def compute_version_stats(rows: list[dict]) -> dict:
     })
     for r in rows:
         v = r["version"]
+        if v.startswith("V4"):
+            v = "V4 — Chain-of-Thought (CoT)"
         stats[v]["total"] += 1
         succ = int(r.get("task_success") or 0)
         tool_acc = int(r.get("tool_accuracy") or 0)
@@ -87,6 +90,8 @@ def compute_version_stats(rows: list[dict]) -> dict:
         if hall:
             stats[v]["halluc_queries"].append(qid)
             
+    if "V4 — Chain-of-Thought (CoT)" in stats:
+        stats["V4 — CoT"] = stats["V4 — Chain-of-Thought (CoT)"]
     return stats
 
 
@@ -127,7 +132,7 @@ def render_prompt_refinement_table(stats: dict) -> str:
         "| Version | Core Techniques | Key Capabilities | Tool Accuracy | Hallucination Rate | Ungrounded Rate | Date Claim Error | Task Success Rate |",
         "|:---|:---|:---|:---:|:---:|:---:|:---:|:---:|",
     ]
-    for v in ["V1 — Naive", "V2 — Role + Rules", "V3 — Few-Shot", "V4 — CoT", "V5 — ReAct", "V6 — RAG + ReAct"]:
+    for v in ["V1 — Naive", "V2 — Role + Rules", "V3 — Few-Shot", "V4 — Chain-of-Thought (CoT)", "V5 — ReAct", "V6 — RAG + ReAct"]:
         if v not in stats or stats[v]["total"] == 0:
             tech, cap = TECHNIQUES.get(v, ("-", "-"))
             lines.append(f"| **{v}** | {tech} | {cap} | NOT RUN | NOT RUN | NOT RUN | NOT RUN | NOT RUN |")
@@ -205,7 +210,7 @@ def render_temperature_table(param_stats: dict) -> str:
 
 def render_failure_analysis(stats: dict) -> str:
     lines = ["### Failure Analysis Across Versions (Resolved, Persisted, New)"]
-    versions = ["V1 — Naive", "V2 — Role + Rules", "V3 — Few-Shot", "V4 — CoT", "V5 — ReAct", "V6 — RAG + ReAct"]
+    versions = ["V1 — Naive", "V2 — Role + Rules", "V3 — Few-Shot", "V4 — Chain-of-Thought (CoT)", "V5 — ReAct", "V6 — RAG + ReAct"]
     prev_failures = set()
     for v in versions:
         if v not in stats:
@@ -242,7 +247,7 @@ def render_objective_numbers(stats: dict, param_stats: dict) -> str:
     v6 = stats.get("V6 — RAG + ReAct", {})
     v1 = stats.get("V1 — Naive", {})
     v3 = stats.get("V3 — Few-Shot", {})
-    v4 = stats.get("V4 — CoT", {})
+    v4 = stats.get("V4 — Chain-of-Thought (CoT)") or stats.get("V4 — CoT", {})
     v5 = stats.get("V5 — ReAct", {})
     
     n6 = v6.get("total", 15)
